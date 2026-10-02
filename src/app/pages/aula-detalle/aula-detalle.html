@@ -1,0 +1,184 @@
+<div class="aula-detalle">
+  <button class="btn-volver" (click)="volver()">← Volver a Mis aulas</button>
+
+  <p *ngIf="cargando()">Cargando…</p>
+  <p *ngIf="error()" class="error">{{ error() }}</p>
+
+  <ng-container *ngIf="!cargando() && materia()">
+    <!-- CABECERA -->
+    <header class="cabecera">
+  <div>
+    <h1>{{ materia()!.nombre }}</h1>
+    <p *ngIf="materia()!.descripcion" class="descripcion">
+      {{ materia()!.descripcion }}
+    </p>
+  </div>
+
+  <div class="cabecera-acciones">
+    <div class="rol-badge" [class]="'rol-' + rol()">
+      {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
+    </div>
+    <button
+      *ngIf="esAdmin"
+      class="btn-peligro"
+      (click)="abrirConfirmarEliminarAula()"
+    >
+      🗑️ Eliminar aula
+    </button>
+  </div>
+</header>
+
+    <!-- VISTA PROFESOR / ADMIN -->
+    <section *ngIf="esDocente">
+      <div class="header-seccion">
+        <h2>Grupos ({{ grupos().length }})</h2>
+        <div class="acciones-seccion">
+          <div class="codigo-invitacion">
+            Código: <code>{{ materia()!.codigoInvitacion }}</code>
+          </div>
+          <button class="btn-primario" (click)="abrirCrearGrupo()">+ Crear grupo</button>
+        </div>
+      </div>
+
+      <p *ngIf="grupos().length === 0" class="vacio">Todavía no hay grupos en esta aula.</p>
+
+      <div class="grid-grupos">
+        <div class="card-grupo" *ngFor="let g of grupos()" (click)="abrirGrupo(g.id)">
+          <div class="card-header">
+            <h3>{{ g.nombre }}</h3>
+            <div class="card-acciones">
+              <button class="btn-icono" title="Editar" (click)="abrirEditarGrupo(g, $event)">
+                ✏️
+              </button>
+              <button class="btn-icono" title="Eliminar" (click)="confirmarEliminar(g, $event)">
+                🗑️
+              </button>
+            </div>
+          </div>
+          <p class="meta">
+            {{ g.integrantes?.length ?? 0 }} integrante{{
+              (g.integrantes?.length ?? 0) === 1 ? '' : 's'
+            }}
+          </p>
+          <span class="proximamente">Ver tablero →</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA ALUMNO -->
+    <section *ngIf="!esDocente">
+      <div *ngIf="!miGrupo()" class="sin-grupo">
+        <h2>Todavía no estás en ningún grupo</h2>
+        <p>Podés crear tu propio grupo y luego invitar a tus compañeros.</p>
+        <button class="btn-primario" (click)="abrirCrearGrupoAlumno()">+ Crear grupo</button>
+      </div>
+
+      <div *ngIf="miGrupo()" class="mi-grupo">
+        <div class="header-seccion">
+          <h2>Mi grupo: {{ miGrupo()!.nombre }}</h2>
+          <button class="btn-primario" (click)="abrirGrupo(miGrupo()!.id)">Ver tablero</button>
+        </div>
+        <p class="meta">
+          {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
+            (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
+          }}
+        </p>
+      </div>
+    </section>
+  </ng-container>
+</div>
+
+<!-- MODAL CREAR/EDITAR GRUPO (profesor) -->
+<div class="modal-backdrop" *ngIf="mostrarModalGrupo()" (click)="cerrarModalGrupo()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicion() ? 'Editar grupo' : 'Crear grupo' }}</h3>
+
+    <label>
+      Nombre del grupo
+      <input [(ngModel)]="nombreGrupo" placeholder="Ej: Los Cracks" />
+    </label>
+
+    <div class="integrantes">
+      <p class="titulo-integrantes">Integrantes</p>
+      <p *ngIf="alumnosDisponibles.length === 0" class="ayuda">
+        Todavía no hay alumnos inscriptos en esta aula.
+      </p>
+      <div class="lista-alumnos">
+        <label
+          *ngFor="let alumnoId of alumnosDisponibles"
+          class="alumno-item"
+          [class.seleccionado]="estaSeleccionado(alumnoId)"
+        >
+          <input
+            type="checkbox"
+            [checked]="estaSeleccionado(alumnoId)"
+            (change)="toggleIntegrante(alumnoId)"
+          />
+          <span class="alumno-id">{{ alumnoId }}</span>
+        </label>
+      </div>
+    </div>
+
+    <p *ngIf="error()" class="error">{{ error() }}</p>
+
+    <div class="modal-acciones">
+      <button (click)="cerrarModalGrupo()">Cancelar</button>
+      <button class="btn-primario" (click)="guardarGrupo()">
+        {{ modoEdicion() ? 'Guardar' : 'Crear' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREAR GRUPO (alumno) -->
+<div class="modal-backdrop" *ngIf="mostrarCrearGrupoAlumno()" (click)="cerrarCrearGrupoAlumno()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Crear grupo</h3>
+    <label>
+      Nombre del grupo
+      <input [(ngModel)]="nombreGrupo" placeholder="Ej: Los Cracks" />
+    </label>
+    <p class="ayuda">Vas a quedar como administrador del grupo.</p>
+    <div class="modal-acciones">
+      <button (click)="cerrarCrearGrupoAlumno()">Cancelar</button>
+      <button class="btn-primario" (click)="crearGrupoAlumno()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-backdrop" *ngIf="mostrarConfirmarEliminar()" (click)="cancelarEliminar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar grupo</h3>
+    <p>
+      ¿Seguro que querés eliminar el grupo
+      <strong>{{ grupoAEliminar()?.nombre }}</strong
+      >? Se van a borrar también todas sus cards. Esta acción no se puede deshacer.
+    </p>
+    <div class="modal-acciones">
+      <button (click)="cancelarEliminar()">Cancelar</button>
+      <button class="btn-peligro" (click)="eliminarGrupo()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMAR ELIMINAR AULA -->
+<div
+  class="modal-backdrop"
+  *ngIf="mostrarConfirmarEliminarAula()"
+  (click)="cancelarEliminarAula()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar aula</h3>
+    <p>
+      ¿Seguro que querés eliminar el aula
+      <strong>{{ materia()?.nombre }}</strong
+      >? Se van a borrar también todos los grupos, sus integrantes y sus
+      cards. Esta acción no se puede deshacer.
+    </p>
+    <div class="modal-acciones">
+      <button (click)="cancelarEliminarAula()">Cancelar</button>
+      <button class="btn-peligro" (click)="eliminarAula()">Eliminar</button>
+    </div>
+  </div>
+</div>

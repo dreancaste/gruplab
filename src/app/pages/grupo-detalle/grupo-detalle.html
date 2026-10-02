@@ -1,0 +1,407 @@
+<div class="grupo-detalle">
+  <button class="btn-volver" (click)="volver()">
+    {{ grupo()?.materiaId ? '← Volver al aula' : '← Volver a Mis aulas' }}
+  </button>
+
+  <p *ngIf="cargando()">Cargando…</p>
+  <p *ngIf="error()" class="error">{{ error() }}</p>
+
+  <ng-container *ngIf="!cargando() && grupo()">
+    <!-- CABECERA -->
+    <header class="cabecera">
+      <div>
+        <h1>{{ grupo()!.nombre }}</h1>
+        <p class="meta">
+          {{ grupo()!.integrantes?.length ?? 0 }} integrante{{
+            (grupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
+          }}
+          · {{ todasLasCards().length }} tarea{{
+            todasLasCards().length === 1 ? '' : 's'
+          }}
+        </p>
+      </div>
+
+      <div class="acciones-cabecera">
+        <button class="btn-primario" (click)="abrirCrearCard()">
+          + Nueva tarea
+        </button>
+
+        <ng-container *ngIf="esAdminDelGrupo()">
+          <button class="btn-secundario" (click)="abrirGestionarIntegrantes()">
+            👥 Integrantes
+          </button>
+          <button class="btn-secundario" (click)="abrirEditarNombre()">
+            ✏️ Nombre
+          </button>
+        </ng-container>
+      </div>
+    </header>
+
+    <!-- KANBAN -->
+    <div class="kanban">
+      <!-- BACKLOG -->
+      <div class="columna">
+        <h3 class="col-titulo">📋 Backlog ({{ backlog().length }})</h3>
+        <div
+          class="col-contenido"
+          cdkDropList
+          [cdkDropListData]="backlog()"
+          (cdkDropListDropped)="drop($event, 'backlog')"
+          id="backlog"
+        >
+          <div class="card" *ngFor="let card of backlog()" cdkDrag>
+            <div class="card-body">
+              <p class="card-titulo">{{ card.titulo }}</p>
+              <p class="card-desc" *ngIf="card.descripcion">
+                {{ card.descripcion }}
+              </p>
+              <p *ngIf="card.puntuacion" class="puntaje">
+                ⭐ {{ card.puntuacion }}/10
+              </p>
+            </div>
+            <div class="card-acciones">
+              <button
+                class="btn-mini"
+                *ngIf="esDocente()"
+                (click)="abrirPuntuar(card)"
+                title="Puntuar"
+              >
+                ⭐
+              </button>
+              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+                ✏️
+              </button>
+              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EN PROGRESO -->
+      <div class="columna">
+        <h3 class="col-titulo">🚧 En progreso ({{ progreso().length }})</h3>
+        <div
+          class="col-contenido"
+          cdkDropList
+          [cdkDropListData]="progreso()"
+          (cdkDropListDropped)="drop($event, 'progreso')"
+          id="progreso"
+        >
+          <div class="card" *ngFor="let card of progreso()" cdkDrag>
+            <div class="card-body">
+              <p class="card-titulo">{{ card.titulo }}</p>
+              <p class="card-desc" *ngIf="card.descripcion">
+                {{ card.descripcion }}
+              </p>
+              <p *ngIf="card.puntuacion" class="puntaje">
+                ⭐ {{ card.puntuacion }}/10
+              </p>
+            </div>
+            <div class="card-acciones">
+              <button
+                class="btn-mini"
+                *ngIf="esDocente()"
+                (click)="abrirPuntuar(card)"
+                title="Puntuar"
+              >
+                ⭐
+              </button>
+              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+                ✏️
+              </button>
+              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVISIÓN -->
+      <div class="columna">
+        <h3 class="col-titulo">👀 Revisión ({{ revision().length }})</h3>
+        <div
+          class="col-contenido"
+          cdkDropList
+          [cdkDropListData]="revision()"
+          (cdkDropListDropped)="drop($event, 'revision')"
+          id="revision"
+        >
+          <div class="card" *ngFor="let card of revision()" cdkDrag>
+            <div class="card-body">
+              <p class="card-titulo">{{ card.titulo }}</p>
+              <p class="card-desc" *ngIf="card.descripcion">
+                {{ card.descripcion }}
+              </p>
+              <p *ngIf="card.puntuacion" class="puntaje">
+                ⭐ {{ card.puntuacion }}/10
+              </p>
+            </div>
+            <div class="card-acciones">
+              <button
+                class="btn-mini"
+                *ngIf="esDocente()"
+                (click)="abrirPuntuar(card)"
+                title="Puntuar"
+              >
+                ⭐
+              </button>
+              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+                ✏️
+              </button>
+              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HECHO -->
+      <div class="columna">
+        <h3 class="col-titulo">✅ Hecho ({{ hecho().length }})</h3>
+        <div
+          class="col-contenido"
+          cdkDropList
+          [cdkDropListData]="hecho()"
+          (cdkDropListDropped)="drop($event, 'hecho')"
+          id="hecho"
+        >
+          <div class="card" *ngFor="let card of hecho()" cdkDrag>
+            <div class="card-body">
+              <p class="card-titulo">{{ card.titulo }}</p>
+              <p class="card-desc" *ngIf="card.descripcion">
+                {{ card.descripcion }}
+              </p>
+              <p *ngIf="card.puntuacion" class="puntaje">
+                ⭐ {{ card.puntuacion }}/10
+              </p>
+            </div>
+            <div class="card-acciones">
+              <button
+                class="btn-mini"
+                *ngIf="esDocente()"
+                (click)="abrirPuntuar(card)"
+                title="Puntuar"
+              >
+                ⭐
+              </button>
+              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+                ✏️
+              </button>
+              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCIONES AL PIE (solo alumnos) -->
+    <div class="acciones-pie" *ngIf="!esDocente()">
+      <button class="btn-secundario" (click)="abrirConfirmarSalir()">
+        Salir del grupo
+      </button>
+      <button
+        *ngIf="puedeEliminarGrupo"
+        class="btn-peligro"
+        (click)="abrirConfirmarEliminarGrupo()"
+      >
+        Eliminar grupo
+      </button>
+    </div>
+  </ng-container>
+</div>
+
+<!-- MODAL CREAR/EDITAR CARD -->
+<div class="modal-backdrop" *ngIf="mostrarModalCard()" (click)="cerrarModalCard()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicionCard() ? 'Editar tarea' : 'Nueva tarea' }}</h3>
+
+    <label>
+      Título
+      <input [(ngModel)]="cardTitulo" placeholder="Ej: Investigar fuentes" />
+    </label>
+
+    <label>
+      Descripción (opcional)
+      <textarea [(ngModel)]="cardDescripcion"></textarea>
+    </label>
+
+    <label>
+      Estado
+      <select [(ngModel)]="cardEstado">
+        <option value="backlog">Backlog</option>
+        <option value="progreso">En progreso</option>
+        <option value="revision">Revisión</option>
+        <option value="hecho">Hecho</option>
+      </select>
+    </label>
+
+    <div class="modal-acciones">
+      <button (click)="cerrarModalCard()">Cancelar</button>
+      <button class="btn-primario" (click)="guardarCard()">
+        {{ modoEdicionCard() ? 'Guardar' : 'Crear' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PUNTUAR (profesor) -->
+<div class="modal-backdrop" *ngIf="mostrarModalPuntuar()" (click)="cerrarPuntuar()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Puntuar: {{ cardAPuntuar()?.titulo }}</h3>
+
+    <label>
+      Puntuación (0 a 10)
+      <input type="number" min="0" max="10" [(ngModel)]="puntuacionInput" />
+    </label>
+
+    <label>
+      Comentario
+      <textarea
+        [(ngModel)]="comentarioInput"
+        placeholder="Observaciones…"
+      ></textarea>
+    </label>
+
+    <div class="modal-acciones">
+      <button (click)="cerrarPuntuar()">Cancelar</button>
+      <button class="btn-primario" (click)="guardarPuntuacion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR NOMBRE DEL GRUPO -->
+<div class="modal-backdrop" *ngIf="mostrarModalNombre()" (click)="cerrarEditarNombre()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Editar nombre del grupo</h3>
+    <label>
+      Nombre
+      <input [(ngModel)]="nuevoNombreGrupo" />
+    </label>
+    <div class="modal-acciones">
+      <button (click)="cerrarEditarNombre()">Cancelar</button>
+      <button class="btn-primario" (click)="guardarNombreGrupo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GESTIONAR INTEGRANTES -->
+<div
+  class="modal-backdrop"
+  *ngIf="mostrarModalIntegrantes()"
+  (click)="cerrarGestionarIntegrantes()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Gestionar integrantes</h3>
+
+    <!-- Tablero independiente -->
+    <ng-container *ngIf="esTableroIndependiente">
+      <p>
+        Este tablero es independiente. Para sumar personas, compartiles el
+        código y ellos se unen desde
+        <strong>Mis aulas → Mis tableros → Unirme con código</strong>.
+      </p>
+      <div class="codigo-destacado">
+        <code>{{ grupo()?.codigoInvitacion }}</code>
+      </div>
+      <p class="ayuda">
+        Integrantes actuales: {{ grupo()!.integrantes?.length ?? 0 }}
+      </p>
+      <div class="modal-acciones">
+        <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">
+          Cerrar
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Grupo dentro de un aula -->
+    <ng-container *ngIf="!esTableroIndependiente">
+      <div class="integrantes-lista">
+        <p class="titulo-lista">Compañeros disponibles en esta aula:</p>
+        <p *ngIf="alumnosAgregables().length === 0" class="ayuda">
+          No hay otros compañeros disponibles. O ya están en otros grupos, o
+          todavía no hay más alumnos en el aula.
+        </p>
+        <label
+          *ngFor="let alumnoId of alumnosAgregables()"
+          class="alumno-item"
+          [class.seleccionado]="estaSeleccionado(alumnoId)"
+        >
+          <input
+            type="checkbox"
+            [checked]="estaSeleccionado(alumnoId)"
+            (change)="toggleIntegrante(alumnoId)"
+          />
+          <span class="alumno-id">{{ alumnoId }}</span>
+        </label>
+      </div>
+
+      <div class="modal-acciones">
+        <button (click)="cerrarGestionarIntegrantes()">Cancelar</button>
+        <button class="btn-primario" (click)="guardarIntegrantes()">
+          Guardar
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- CONFIRMAR SALIR DEL GRUPO -->
+<div
+  class="modal-backdrop"
+  *ngIf="mostrarConfirmarSalir()"
+  (click)="cancelarSalir()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Salir del grupo</h3>
+    <p>
+      ¿Seguro que querés salir de <strong>{{ grupo()?.nombre }}</strong
+      >?
+    </p>
+    <p
+      class="ayuda"
+      *ngIf="esAdminDelGrupo() && (grupo()!.integrantes?.length ?? 0) > 1"
+    >
+      Como sos el admin, el rol va a pasar automáticamente al siguiente
+      integrante.
+    </p>
+    <p
+      class="ayuda"
+      *ngIf="esAdminDelGrupo() && (grupo()!.integrantes?.length ?? 0) === 1"
+    >
+      Sos el único integrante. Si salís, el grupo y sus cards se van a
+      eliminar.
+    </p>
+    <div class="modal-acciones">
+      <button (click)="cancelarSalir()">Cancelar</button>
+      <button class="btn-peligro" (click)="salirDelGrupo()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMAR ELIMINAR GRUPO -->
+<div
+  class="modal-backdrop"
+  *ngIf="mostrarConfirmarEliminarGrupo()"
+  (click)="cancelarEliminarGrupo()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Eliminar grupo</h3>
+    <p>
+      ¿Seguro que querés eliminar el grupo
+      <strong>{{ grupo()?.nombre }}</strong
+      >? Esta acción no se puede deshacer.
+    </p>
+    <div class="modal-acciones">
+      <button (click)="cancelarEliminarGrupo()">Cancelar</button>
+      <button class="btn-peligro" (click)="eliminarGrupoCompleto()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>

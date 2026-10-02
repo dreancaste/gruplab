@@ -1,0 +1,57 @@
+type Usuario @model @auth(rules: [{allow: owner, ownerField: "owner"}])
+{
+  email: String!
+  nombre: String!
+}
+
+type Materia @model @auth(rules: [{allow: private}])
+{
+  nombre: String!
+  descripcion: String
+  creadorId: String!
+  admins: [String]
+  profesores: [String]
+  alumnos: [String]
+  codigoInvitacion: String!
+  grupos: [Grupo] @hasMany(references: ["materiaId"])
+}
+
+type Grupo @model @auth(rules: [{allow: private}])
+{
+  nombre: String!
+  materiaId: ID!
+  materia: Materia @belongsTo(references: ["materiaId"])
+  adminId: String!
+  integrantes: [String]
+  cards: [Card] @hasMany(references: ["grupoId"])
+}
+
+type Card @model @auth(rules: [{allow: private}])
+{
+  titulo: String!
+  descripcion: String
+  estado: CardEstado
+  orden: Int
+  grupoId: ID!
+  grupo: Grupo @belongsTo(references: ["grupoId"])
+  adjuntos: [String]
+  puntuacion: Int
+  comentarioProfesor: String
+}
+
+type LogActividad @model @auth(rules: [{allow: private, operations: [read, create]}])
+{
+  grupoId: ID!
+  usuarioId: String!
+  accion: String!
+  entidad: String!
+  entidadId: String!
+  timestamp: AWSTimestamp!
+}
+
+enum CardEstado {
+  backlog
+  progreso
+  revision
+  hecho
+}

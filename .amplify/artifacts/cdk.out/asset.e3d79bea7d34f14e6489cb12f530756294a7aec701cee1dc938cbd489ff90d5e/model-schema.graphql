@@ -1,0 +1,45 @@
+type Materia @model @auth(rules: [{allow: owner, ownerField: "owner"}])
+{
+  nombre: String!
+  profesorId: String!
+  grupos: [Grupo] @hasMany(references: ["materiaId"])
+}
+
+type Grupo @model @auth(rules: [{allow: owner, ownerField: "owner"}])
+{
+  nombre: String!
+  materiaId: ID!
+  materia: Materia @belongsTo(references: ["materiaId"])
+  adminId: String!
+  integrantes: [String]
+  cards: [Card] @hasMany(references: ["grupoId"])
+}
+
+type Card @model @auth(rules: [{allow: owner, ownerField: "owner"}])
+{
+  titulo: String!
+  descripcion: String
+  estado: CardEstado
+  orden: Int
+  grupoId: ID!
+  grupo: Grupo @belongsTo(references: ["grupoId"])
+  adjuntos: [String]
+  puntuacion: Int
+}
+
+type LogActividad @model @auth(rules: [{allow: owner, ownerField: "owner"}])
+{
+  grupoId: ID!
+  usuarioId: String!
+  accion: String!
+  entidad: String!
+  entidadId: String!
+  timestamp: AWSTimestamp!
+}
+
+enum CardEstado {
+  backlog
+  progreso
+  revision
+  hecho
+}

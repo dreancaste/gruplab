@@ -1,0 +1,637 @@
+type Usuario @aws_iam @aws_cognito_user_pools {
+  email: String!
+  nombre: String!
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  owner: String
+}
+
+type Materia @aws_iam @aws_cognito_user_pools {
+  nombre: String!
+  descripcion: String
+  creadorId: String!
+  admins: [String]
+  profesores: [String]
+  alumnos: [String]
+  codigoInvitacion: String!
+  grupos(filter: ModelGrupoFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelGrupoConnection
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Grupo @aws_iam @aws_cognito_user_pools {
+  nombre: String!
+  materiaId: ID
+  materia: Materia
+  adminId: String!
+  integrantes: [String]
+  codigoInvitacion: String
+  esIndependiente: Boolean
+  cards(filter: ModelCardFilterInput, sortDirection: ModelSortDirection, limit: Int, nextToken: String): ModelCardConnection
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Card @aws_iam @aws_cognito_user_pools {
+  titulo: String!
+  descripcion: String
+  estado: CardEstado
+  orden: Int
+  grupoId: ID!
+  grupo: Grupo
+  adjuntos: [String]
+  puntuacion: Int
+  comentarioProfesor: String
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type LogActividad @aws_iam @aws_cognito_user_pools {
+  grupoId: ID!
+  usuarioId: String!
+  accion: String!
+  entidad: String!
+  entidadId: String!
+  timestamp: AWSTimestamp!
+  id: ID!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum CardEstado {
+  backlog
+  progreso
+  revision
+  hecho
+}
+
+input AmplifyAIConversationTurnErrorInput {
+  errorType: String!
+  message: String!
+}
+
+input ModelStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelBooleanInput {
+  ne: Boolean
+  eq: Boolean
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelSubscriptionStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  in: [String]
+  notIn: [String]
+}
+
+input ModelSubscriptionIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  in: [Int]
+  notIn: [Int]
+}
+
+input ModelSubscriptionFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  in: [Float]
+  notIn: [Float]
+}
+
+input ModelSubscriptionBooleanInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+input ModelSubscriptionIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  in: [ID]
+  notIn: [ID]
+}
+
+enum ModelAttributeTypes {
+  binary
+  binarySet
+  bool
+  list
+  map
+  number
+  numberSet
+  string
+  stringSet
+  _null
+}
+
+input ModelSizeInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+enum ModelSortDirection {
+  ASC
+  DESC
+}
+
+type ModelUsuarioConnection @aws_iam @aws_cognito_user_pools {
+  items: [Usuario]!
+  nextToken: String
+}
+
+input ModelUsuarioFilterInput {
+  email: ModelStringInput
+  nombre: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelUsuarioFilterInput]
+  or: [ModelUsuarioFilterInput]
+  not: ModelUsuarioFilterInput
+  owner: ModelStringInput
+}
+
+type Query {
+  getUsuario(id: ID!): Usuario @aws_iam @aws_cognito_user_pools
+  listUsuarios(filter: ModelUsuarioFilterInput, limit: Int, nextToken: String): ModelUsuarioConnection @aws_iam @aws_cognito_user_pools
+  getMateria(id: ID!): Materia @aws_iam @aws_cognito_user_pools
+  listMaterias(filter: ModelMateriaFilterInput, limit: Int, nextToken: String): ModelMateriaConnection @aws_iam @aws_cognito_user_pools
+  getGrupo(id: ID!): Grupo @aws_iam @aws_cognito_user_pools
+  listGrupos(filter: ModelGrupoFilterInput, limit: Int, nextToken: String): ModelGrupoConnection @aws_iam @aws_cognito_user_pools
+  getCard(id: ID!): Card @aws_iam @aws_cognito_user_pools
+  listCards(filter: ModelCardFilterInput, limit: Int, nextToken: String): ModelCardConnection @aws_iam @aws_cognito_user_pools
+  getLogActividad(id: ID!): LogActividad @aws_iam @aws_cognito_user_pools
+  listLogActividads(filter: ModelLogActividadFilterInput, limit: Int, nextToken: String): ModelLogActividadConnection @aws_iam @aws_cognito_user_pools
+}
+
+input ModelUsuarioConditionInput {
+  email: ModelStringInput
+  nombre: ModelStringInput
+  and: [ModelUsuarioConditionInput]
+  or: [ModelUsuarioConditionInput]
+  not: ModelUsuarioConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  owner: ModelStringInput
+}
+
+input CreateUsuarioInput {
+  email: String!
+  nombre: String!
+  id: ID
+}
+
+input UpdateUsuarioInput {
+  email: String
+  nombre: String
+  id: ID!
+}
+
+input DeleteUsuarioInput {
+  id: ID!
+}
+
+type Mutation {
+  createUsuario(input: CreateUsuarioInput!, condition: ModelUsuarioConditionInput): Usuario @aws_iam @aws_cognito_user_pools
+  updateUsuario(input: UpdateUsuarioInput!, condition: ModelUsuarioConditionInput): Usuario @aws_iam @aws_cognito_user_pools
+  deleteUsuario(input: DeleteUsuarioInput!, condition: ModelUsuarioConditionInput): Usuario @aws_iam @aws_cognito_user_pools
+  createMateria(input: CreateMateriaInput!, condition: ModelMateriaConditionInput): Materia @aws_iam @aws_cognito_user_pools
+  updateMateria(input: UpdateMateriaInput!, condition: ModelMateriaConditionInput): Materia @aws_iam @aws_cognito_user_pools
+  deleteMateria(input: DeleteMateriaInput!, condition: ModelMateriaConditionInput): Materia @aws_iam @aws_cognito_user_pools
+  createGrupo(input: CreateGrupoInput!, condition: ModelGrupoConditionInput): Grupo @aws_iam @aws_cognito_user_pools
+  updateGrupo(input: UpdateGrupoInput!, condition: ModelGrupoConditionInput): Grupo @aws_iam @aws_cognito_user_pools
+  deleteGrupo(input: DeleteGrupoInput!, condition: ModelGrupoConditionInput): Grupo @aws_iam @aws_cognito_user_pools
+  createCard(input: CreateCardInput!, condition: ModelCardConditionInput): Card @aws_iam @aws_cognito_user_pools
+  updateCard(input: UpdateCardInput!, condition: ModelCardConditionInput): Card @aws_iam @aws_cognito_user_pools
+  deleteCard(input: DeleteCardInput!, condition: ModelCardConditionInput): Card @aws_iam @aws_cognito_user_pools
+  createLogActividad(input: CreateLogActividadInput!, condition: ModelLogActividadConditionInput): LogActividad @aws_iam @aws_cognito_user_pools
+  updateLogActividad(input: UpdateLogActividadInput!, condition: ModelLogActividadConditionInput): LogActividad @aws_iam @aws_cognito_user_pools
+  deleteLogActividad(input: DeleteLogActividadInput!, condition: ModelLogActividadConditionInput): LogActividad @aws_iam @aws_cognito_user_pools
+}
+
+input ModelSubscriptionUsuarioFilterInput {
+  email: ModelSubscriptionStringInput
+  nombre: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionUsuarioFilterInput]
+  or: [ModelSubscriptionUsuarioFilterInput]
+  owner: ModelStringInput
+}
+
+type Subscription {
+  onCreateUsuario(filter: ModelSubscriptionUsuarioFilterInput, owner: String): Usuario @aws_subscribe(mutations: ["createUsuario"]) @aws_iam @aws_cognito_user_pools
+  onUpdateUsuario(filter: ModelSubscriptionUsuarioFilterInput, owner: String): Usuario @aws_subscribe(mutations: ["updateUsuario"]) @aws_iam @aws_cognito_user_pools
+  onDeleteUsuario(filter: ModelSubscriptionUsuarioFilterInput, owner: String): Usuario @aws_subscribe(mutations: ["deleteUsuario"]) @aws_iam @aws_cognito_user_pools
+  onCreateMateria(filter: ModelSubscriptionMateriaFilterInput): Materia @aws_subscribe(mutations: ["createMateria"]) @aws_iam @aws_cognito_user_pools
+  onUpdateMateria(filter: ModelSubscriptionMateriaFilterInput): Materia @aws_subscribe(mutations: ["updateMateria"]) @aws_iam @aws_cognito_user_pools
+  onDeleteMateria(filter: ModelSubscriptionMateriaFilterInput): Materia @aws_subscribe(mutations: ["deleteMateria"]) @aws_iam @aws_cognito_user_pools
+  onCreateGrupo(filter: ModelSubscriptionGrupoFilterInput): Grupo @aws_subscribe(mutations: ["createGrupo"]) @aws_iam @aws_cognito_user_pools
+  onUpdateGrupo(filter: ModelSubscriptionGrupoFilterInput): Grupo @aws_subscribe(mutations: ["updateGrupo"]) @aws_iam @aws_cognito_user_pools
+  onDeleteGrupo(filter: ModelSubscriptionGrupoFilterInput): Grupo @aws_subscribe(mutations: ["deleteGrupo"]) @aws_iam @aws_cognito_user_pools
+  onCreateCard(filter: ModelSubscriptionCardFilterInput): Card @aws_subscribe(mutations: ["createCard"]) @aws_iam @aws_cognito_user_pools
+  onUpdateCard(filter: ModelSubscriptionCardFilterInput): Card @aws_subscribe(mutations: ["updateCard"]) @aws_iam @aws_cognito_user_pools
+  onDeleteCard(filter: ModelSubscriptionCardFilterInput): Card @aws_subscribe(mutations: ["deleteCard"]) @aws_iam @aws_cognito_user_pools
+  onCreateLogActividad(filter: ModelSubscriptionLogActividadFilterInput): LogActividad @aws_subscribe(mutations: ["createLogActividad"]) @aws_iam @aws_cognito_user_pools
+  onUpdateLogActividad(filter: ModelSubscriptionLogActividadFilterInput): LogActividad @aws_subscribe(mutations: ["updateLogActividad"]) @aws_iam @aws_cognito_user_pools
+  onDeleteLogActividad(filter: ModelSubscriptionLogActividadFilterInput): LogActividad @aws_subscribe(mutations: ["deleteLogActividad"]) @aws_iam @aws_cognito_user_pools
+}
+
+type ModelMateriaConnection @aws_iam @aws_cognito_user_pools {
+  items: [Materia]!
+  nextToken: String
+}
+
+input ModelMateriaFilterInput {
+  nombre: ModelStringInput
+  descripcion: ModelStringInput
+  creadorId: ModelStringInput
+  admins: ModelStringInput
+  profesores: ModelStringInput
+  alumnos: ModelStringInput
+  codigoInvitacion: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelMateriaFilterInput]
+  or: [ModelMateriaFilterInput]
+  not: ModelMateriaFilterInput
+}
+
+input ModelMateriaConditionInput {
+  nombre: ModelStringInput
+  descripcion: ModelStringInput
+  creadorId: ModelStringInput
+  admins: ModelStringInput
+  profesores: ModelStringInput
+  alumnos: ModelStringInput
+  codigoInvitacion: ModelStringInput
+  and: [ModelMateriaConditionInput]
+  or: [ModelMateriaConditionInput]
+  not: ModelMateriaConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+}
+
+input CreateMateriaInput {
+  nombre: String!
+  descripcion: String
+  creadorId: String!
+  admins: [String]
+  profesores: [String]
+  alumnos: [String]
+  codigoInvitacion: String!
+  id: ID
+}
+
+input UpdateMateriaInput {
+  nombre: String
+  descripcion: String
+  creadorId: String
+  admins: [String]
+  profesores: [String]
+  alumnos: [String]
+  codigoInvitacion: String
+  id: ID!
+}
+
+input DeleteMateriaInput {
+  id: ID!
+}
+
+input ModelSubscriptionMateriaFilterInput {
+  nombre: ModelSubscriptionStringInput
+  descripcion: ModelSubscriptionStringInput
+  creadorId: ModelSubscriptionStringInput
+  admins: ModelSubscriptionStringInput
+  profesores: ModelSubscriptionStringInput
+  alumnos: ModelSubscriptionStringInput
+  codigoInvitacion: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionMateriaFilterInput]
+  or: [ModelSubscriptionMateriaFilterInput]
+}
+
+type ModelGrupoConnection @aws_iam @aws_cognito_user_pools {
+  items: [Grupo]!
+  nextToken: String
+}
+
+input ModelGrupoFilterInput {
+  nombre: ModelStringInput
+  materiaId: ModelIDInput
+  adminId: ModelStringInput
+  integrantes: ModelStringInput
+  codigoInvitacion: ModelStringInput
+  esIndependiente: ModelBooleanInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelGrupoFilterInput]
+  or: [ModelGrupoFilterInput]
+  not: ModelGrupoFilterInput
+}
+
+input ModelGrupoConditionInput {
+  nombre: ModelStringInput
+  materiaId: ModelIDInput
+  adminId: ModelStringInput
+  integrantes: ModelStringInput
+  codigoInvitacion: ModelStringInput
+  esIndependiente: ModelBooleanInput
+  and: [ModelGrupoConditionInput]
+  or: [ModelGrupoConditionInput]
+  not: ModelGrupoConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+}
+
+input CreateGrupoInput {
+  nombre: String!
+  materiaId: ID
+  adminId: String!
+  integrantes: [String]
+  codigoInvitacion: String
+  esIndependiente: Boolean
+  id: ID
+}
+
+input UpdateGrupoInput {
+  nombre: String
+  materiaId: ID
+  adminId: String
+  integrantes: [String]
+  codigoInvitacion: String
+  esIndependiente: Boolean
+  id: ID!
+}
+
+input DeleteGrupoInput {
+  id: ID!
+}
+
+input ModelSubscriptionGrupoFilterInput {
+  nombre: ModelSubscriptionStringInput
+  materiaId: ModelSubscriptionIDInput
+  adminId: ModelSubscriptionStringInput
+  integrantes: ModelSubscriptionStringInput
+  codigoInvitacion: ModelSubscriptionStringInput
+  esIndependiente: ModelSubscriptionBooleanInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionGrupoFilterInput]
+  or: [ModelSubscriptionGrupoFilterInput]
+}
+
+type ModelCardConnection @aws_iam @aws_cognito_user_pools {
+  items: [Card]!
+  nextToken: String
+}
+
+input ModelCardEstadoInput {
+  eq: CardEstado
+  ne: CardEstado
+}
+
+input ModelCardFilterInput {
+  titulo: ModelStringInput
+  descripcion: ModelStringInput
+  estado: ModelCardEstadoInput
+  orden: ModelIntInput
+  grupoId: ModelIDInput
+  adjuntos: ModelStringInput
+  puntuacion: ModelIntInput
+  comentarioProfesor: ModelStringInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelCardFilterInput]
+  or: [ModelCardFilterInput]
+  not: ModelCardFilterInput
+}
+
+input ModelCardConditionInput {
+  titulo: ModelStringInput
+  descripcion: ModelStringInput
+  estado: ModelCardEstadoInput
+  orden: ModelIntInput
+  grupoId: ModelIDInput
+  adjuntos: ModelStringInput
+  puntuacion: ModelIntInput
+  comentarioProfesor: ModelStringInput
+  and: [ModelCardConditionInput]
+  or: [ModelCardConditionInput]
+  not: ModelCardConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+}
+
+input CreateCardInput {
+  titulo: String!
+  descripcion: String
+  estado: CardEstado
+  orden: Int
+  grupoId: ID!
+  adjuntos: [String]
+  puntuacion: Int
+  comentarioProfesor: String
+  id: ID
+}
+
+input UpdateCardInput {
+  titulo: String
+  descripcion: String
+  estado: CardEstado
+  orden: Int
+  grupoId: ID
+  adjuntos: [String]
+  puntuacion: Int
+  comentarioProfesor: String
+  id: ID!
+}
+
+input DeleteCardInput {
+  id: ID!
+}
+
+input ModelSubscriptionCardFilterInput {
+  titulo: ModelSubscriptionStringInput
+  descripcion: ModelSubscriptionStringInput
+  estado: ModelSubscriptionStringInput
+  orden: ModelSubscriptionIntInput
+  grupoId: ModelSubscriptionIDInput
+  adjuntos: ModelSubscriptionStringInput
+  puntuacion: ModelSubscriptionIntInput
+  comentarioProfesor: ModelSubscriptionStringInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionCardFilterInput]
+  or: [ModelSubscriptionCardFilterInput]
+}
+
+type ModelLogActividadConnection @aws_iam @aws_cognito_user_pools {
+  items: [LogActividad]!
+  nextToken: String
+}
+
+input ModelLogActividadFilterInput {
+  grupoId: ModelIDInput
+  usuarioId: ModelStringInput
+  accion: ModelStringInput
+  entidad: ModelStringInput
+  entidadId: ModelStringInput
+  timestamp: ModelIntInput
+  id: ModelIDInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+  and: [ModelLogActividadFilterInput]
+  or: [ModelLogActividadFilterInput]
+  not: ModelLogActividadFilterInput
+}
+
+input ModelLogActividadConditionInput {
+  grupoId: ModelIDInput
+  usuarioId: ModelStringInput
+  accion: ModelStringInput
+  entidad: ModelStringInput
+  entidadId: ModelStringInput
+  timestamp: ModelIntInput
+  and: [ModelLogActividadConditionInput]
+  or: [ModelLogActividadConditionInput]
+  not: ModelLogActividadConditionInput
+  createdAt: ModelStringInput
+  updatedAt: ModelStringInput
+}
+
+input CreateLogActividadInput {
+  grupoId: ID!
+  usuarioId: String!
+  accion: String!
+  entidad: String!
+  entidadId: String!
+  timestamp: AWSTimestamp!
+  id: ID
+}
+
+input UpdateLogActividadInput {
+  grupoId: ID
+  usuarioId: String
+  accion: String
+  entidad: String
+  entidadId: String
+  timestamp: AWSTimestamp
+  id: ID!
+}
+
+input DeleteLogActividadInput {
+  id: ID!
+}
+
+input ModelSubscriptionLogActividadFilterInput {
+  grupoId: ModelSubscriptionIDInput
+  usuarioId: ModelSubscriptionStringInput
+  accion: ModelSubscriptionStringInput
+  entidad: ModelSubscriptionStringInput
+  entidadId: ModelSubscriptionStringInput
+  timestamp: ModelSubscriptionIntInput
+  id: ModelSubscriptionIDInput
+  createdAt: ModelSubscriptionStringInput
+  updatedAt: ModelSubscriptionStringInput
+  and: [ModelSubscriptionLogActividadFilterInput]
+  or: [ModelSubscriptionLogActividadFilterInput]
+}

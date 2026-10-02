@@ -1,0 +1,887 @@
+{
+ "Resources": {
+  "Materiagruposauth0FunctionMateriagruposauth0FunctionAppSyncFunctionD9A087C4": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPINONEDS12AF5B48Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "Materiagruposauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5b2dd26ac19f6a54684f2769d465463159cc27a441d7ac8b8efafdec1b2370fd.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/Materiagruposauth0Function/Materiagruposauth0Function.AppSyncFunction"
+   }
+  },
+  "MateriaGruposDataResolverFnMateriaGruposDataResolverFnAppSyncFunctionFFFF63FC": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoDataSourceB313658CName"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "MateriaGruposDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/f30617b494b7f8c29c2e60793b8dd2cf4d293fbebc35eea386247a9d257355f9.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/49e7a1f2fb4c809b82bed6b0242a2a3bcfa2c5276ebd2539ff330fee36f8fe18.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/MateriaGruposDataResolverFn/MateriaGruposDataResolverFn.AppSyncFunction"
+   }
+  },
+  "MateriagruposResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "FieldName": "grupos",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "Materiagruposauth0FunctionMateriagruposauth0FunctionAppSyncFunctionD9A087C4",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "MateriaGruposDataResolverFnMateriaGruposDataResolverFnAppSyncFunctionFFFF63FC",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Materia\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"grupos\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoTable366C6FE4TableArn"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthauthenticatedUserRole8BE8D666Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthunauthenticatedUserRoleD392DCCCRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthIdentityPool61DE765DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Materia"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/materiaGruposResolver"
+   }
+  },
+  "Grupocardsauth0FunctionGrupocardsauth0FunctionAppSyncFunction86E72CBF": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPINONEDS12AF5B48Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "Grupocardsauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5b2dd26ac19f6a54684f2769d465463159cc27a441d7ac8b8efafdec1b2370fd.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/Grupocardsauth0Function/Grupocardsauth0Function.AppSyncFunction"
+   }
+  },
+  "GrupoCardsDataResolverFnGrupoCardsDataResolverFnAppSyncFunction3B5E106F": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardNestedStackCardNestedStackResourceCB3FA754Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardCardDataSource26E99415Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "GrupoCardsDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/25c73b6ab03daafacc5dc1804ccb4f79df29c22ada7f15ea7ea21d91d2247650.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/49e7a1f2fb4c809b82bed6b0242a2a3bcfa2c5276ebd2539ff330fee36f8fe18.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/GrupoCardsDataResolverFn/GrupoCardsDataResolverFn.AppSyncFunction"
+   }
+  },
+  "GrupocardsResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "FieldName": "cards",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "Grupocardsauth0FunctionGrupocardsauth0FunctionAppSyncFunction86E72CBF",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "GrupoCardsDataResolverFnGrupoCardsDataResolverFnAppSyncFunction3B5E106F",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Grupo\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"cards\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardNestedStackCardNestedStackResourceCB3FA754Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardCardTable4F8E1B23TableArn"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthauthenticatedUserRole8BE8D666Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthunauthenticatedUserRoleD392DCCCRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthIdentityPool61DE765DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Grupo"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/grupoCardsResolver"
+   }
+  },
+  "Grupomateriaauth0FunctionGrupomateriaauth0FunctionAppSyncFunction235CCB38": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPINONEDS12AF5B48Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "Grupomateriaauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5b2dd26ac19f6a54684f2769d465463159cc27a441d7ac8b8efafdec1b2370fd.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/Grupomateriaauth0Function/Grupomateriaauth0Function.AppSyncFunction"
+   }
+  },
+  "GrupoMateriaDataResolverFnGrupoMateriaDataResolverFnAppSyncFunction511FE620": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaNestedStackMateriaNestedStackResourceCA791059Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaMateriaDataSourceB03648B0Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "GrupoMateriaDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/07606e2579f8fe04ba0b16fa30df586dcb50010d0602a55f93072f9d74f1989d.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/dcb70e4856bc9a423e02b8b9e9c2ab3f71479784572d4c04a02d1f5b61a9f9ac.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/GrupoMateriaDataResolverFn/GrupoMateriaDataResolverFn.AppSyncFunction"
+   }
+  },
+  "GrupomateriaResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "FieldName": "materia",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "Grupomateriaauth0FunctionGrupomateriaauth0FunctionAppSyncFunction235CCB38",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "GrupoMateriaDataResolverFnGrupoMateriaDataResolverFnAppSyncFunction511FE620",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Grupo\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"materia\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaNestedStackMateriaNestedStackResourceCA791059Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaMateriaTableA45AEADBTableArn"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthauthenticatedUserRole8BE8D666Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthunauthenticatedUserRoleD392DCCCRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthIdentityPool61DE765DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Grupo"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/grupoMateriaResolver"
+   }
+  },
+  "Cardgrupoauth0FunctionCardgrupoauth0FunctionAppSyncFunction5F7C7A1E": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPINONEDS12AF5B48Name"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "Cardgrupoauth0Function",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5b2dd26ac19f6a54684f2769d465463159cc27a441d7ac8b8efafdec1b2370fd.vtl"
+    },
+    "ResponseMappingTemplate": "$util.toJson({})"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/Cardgrupoauth0Function/Cardgrupoauth0Function.AppSyncFunction"
+   }
+  },
+  "CardGrupoDataResolverFnCardGrupoDataResolverFnAppSyncFunctionF33990D6": {
+   "Type": "AWS::AppSync::FunctionConfiguration",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "DataSourceName": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoDataSourceB313658CName"
+    },
+    "FunctionVersion": "2018-05-29",
+    "Name": "CardGrupoDataResolverFn",
+    "RequestMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/a4c45f49d7a395c366ce1de4035f8c68151642a0943ca09128402424391dbbef.vtl"
+    },
+    "ResponseMappingTemplateS3Location": {
+     "Fn::Sub": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/dcb70e4856bc9a423e02b8b9e9c2ab3f71479784572d4c04a02d1f5b61a9f9ac.vtl"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/CardGrupoDataResolverFn/CardGrupoDataResolverFn.AppSyncFunction"
+   }
+  },
+  "CardgrupoResolver": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+    },
+    "FieldName": "grupo",
+    "Kind": "PIPELINE",
+    "PipelineConfig": {
+     "Functions": [
+      {
+       "Fn::GetAtt": [
+        "Cardgrupoauth0FunctionCardgrupoauth0FunctionAppSyncFunction5F7C7A1E",
+        "FunctionId"
+       ]
+      },
+      {
+       "Fn::GetAtt": [
+        "CardGrupoDataResolverFnCardGrupoDataResolverFnAppSyncFunctionF33990D6",
+        "FunctionId"
+       ]
+      }
+     ]
+    },
+    "RequestMappingTemplate": {
+     "Fn::Join": [
+      "",
+      [
+       "$util.qr($ctx.stash.put(\"typeName\", \"Card\"))\n$util.qr($ctx.stash.put(\"fieldName\", \"grupo\"))\n$util.qr($ctx.stash.put(\"conditions\", []))\n$util.qr($ctx.stash.put(\"metadata\", {}))\n$util.qr($ctx.stash.metadata.put(\"dataSourceType\", \"AMAZON_DYNAMODB\"))\n$util.qr($ctx.stash.metadata.put(\"apiId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"connectionAttributes\", {}))\n$util.qr($ctx.stash.put(\"tableName\", \"",
+       {
+        "Fn::Select": [
+         1,
+         {
+          "Fn::Split": [
+           "/",
+           {
+            "Fn::Select": [
+             5,
+             {
+              "Fn::Split": [
+               ":",
+               {
+                "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoTable366C6FE4TableArn"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"authRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthauthenticatedUserRole8BE8D666Ref"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"unauthRole\", \"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":sts::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":assumed-role/",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthunauthenticatedUserRoleD392DCCCRef"
+       },
+       "/CognitoIdentityCredentials\"))\n$util.qr($ctx.stash.put(\"identityPoolId\", \"",
+       {
+        "Ref": "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthIdentityPool61DE765DRef"
+       },
+       "\"))\n$util.qr($ctx.stash.put(\"adminRoles\", []))\n$util.toJson({})"
+      ]
+     ]
+    },
+    "ResponseMappingTemplate": "$util.toJson($ctx.prev.result)",
+    "TypeName": "Card"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/cardGrupoResolver"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/yXMPQ6CQBBA4bPQLyM/idZCYmkBByDjMpABnCXMLsQQ7m7Q6strXgbZLYUkwk1j247xxC/Yn6Se2tqjHQ1u2uyaN6hKXuF+YjSHItiRfIFKBudZP2JhLzt5BLGenZROOu7DgmeYspOK1E0rLcdhfo/aY8/SH0ZcSzDoZc2ukCaQRIMyx0sQz2+C6u8XpW1AjacAAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "amplify-gruplab-lucia-sandbox-73f78ba1e7/data/amplifyData/ConnectionStack/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-3"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-4"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Equals": [
+      {
+       "Ref": "AWS::Region"
+      },
+      "us-west-2"
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPI05E35294ApiId": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGraphQLAPINONEDS12AF5B48Name": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoDataSourceB313658CName": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoNestedStackGrupoNestedStackResource1B99B54AOutputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataGrupoGrupoTable366C6FE4TableArn": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthauthenticatedUserRole8BE8D666Ref": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthunauthenticatedUserRoleD392DCCCRef": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7authNestedStackauthNestedStackResource34CCDB8FOutputsamplifygruplabluciasandbox73f78ba1e7authamplifyAuthIdentityPool61DE765DRef": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardNestedStackCardNestedStackResourceCB3FA754Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardCardDataSource26E99415Name": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardNestedStackCardNestedStackResourceCB3FA754Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataCardCardTable4F8E1B23TableArn": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaNestedStackMateriaNestedStackResourceCA791059Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaMateriaDataSourceB03648B0Name": {
+   "Type": "String"
+  },
+  "referencetoamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaNestedStackMateriaNestedStackResourceCA791059Outputsamplifygruplabluciasandbox73f78ba1e7dataamplifyDataMateriaMateriaTableA45AEADBTableArn": {
+   "Type": "String"
+  }
+ }
+}

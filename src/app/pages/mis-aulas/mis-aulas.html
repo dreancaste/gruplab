@@ -1,0 +1,175 @@
+<div class="mis-aulas">
+  <h1>Mis aulas</h1>
+
+  <p *ngIf="cargando()">Cargando…</p>
+
+  <p *ngIf="error()" class="error">{{ error() }}</p>
+
+  <ng-container *ngIf="!cargando()">
+    <!-- SECCIÓN DOCENTE -->
+    <section *ngIf="materiasComoDocente.length > 0 || userId()">
+      <div class="header-seccion">
+        <h2>Como docente</h2>
+        <button class="btn-primario" (click)="abrirCrear()">+ Crear aula</button>
+      </div>
+
+      <p *ngIf="materiasComoDocente.length === 0" class="vacio">
+        Todavía no creaste ninguna aula.
+      </p>
+
+      <div class="grid-aulas">
+        <div
+          class="card-aula"
+          *ngFor="let m of materiasComoDocente"
+          (click)="abrirAula(m.id)"
+        >
+          <h3>{{ m.nombre }}</h3>
+          <p *ngIf="m.descripcion">{{ m.descripcion }}</p>
+          <div class="card-footer">
+            <span class="badge">{{
+              m.admins?.includes(userId()!) ? 'Admin' : 'Profesor'
+            }}</span>
+            <span class="codigo">Código: {{ m.codigoInvitacion }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+        <!-- SECCIÓN TABLEROS INDEPENDIENTES -->
+    <section>
+      <div class="header-seccion">
+        <h2>Mis tableros</h2>
+        <div class="acciones-seccion">
+          <button class="btn-secundario" (click)="abrirUnirseTablero()">
+            + Unirme con código
+          </button>
+          <button class="btn-primario" (click)="abrirCrearTablero()">
+            + Crear tablero
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="misTableros().length === 0" class="vacio">
+        Todavía no tenés tableros independientes. Podés crear uno para
+        organizar tu trabajo sin depender de una materia.
+      </p>
+
+      <div class="grid-aulas">
+        <div
+          class="card-aula"
+          *ngFor="let t of misTableros()"
+          (click)="abrirTablero(t.id)"
+        >
+          <h3>{{ t.nombre }}</h3>
+          <div class="card-footer">
+            <span class="badge">{{
+              t.adminId === userId() ? 'Admin' : 'Miembro'
+            }}</span>
+            <span class="codigo">Código: {{ t.codigoInvitacion }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN ALUMNO -->
+    <section>
+      <div class="header-seccion">
+        <h2>Como alumno</h2>
+        <button class="btn-secundario" (click)="abrirUnirse()">
+          + Unirme con código
+        </button>
+      </div>
+
+      <p *ngIf="materiasComoAlumno.length === 0" class="vacio">
+        Todavía no estás inscripto en ninguna aula como alumno.
+      </p>
+
+      <div class="grid-aulas">
+        <div
+          class="card-aula"
+          *ngFor="let m of materiasComoAlumno"
+          (click)="abrirAula(m.id)"
+        >
+          <h3>{{ m.nombre }}</h3>
+          <p *ngIf="m.descripcion">{{ m.descripcion }}</p>
+          <div class="card-footer">
+            <span class="badge">Alumno</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>
+
+<!-- MODAL CREAR AULA -->
+<div class="modal-backdrop" *ngIf="mostrarCrear()" (click)="cerrarCrear()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Crear aula</h3>
+    <label>
+      Nombre
+      <input [(ngModel)]="nuevaNombre" placeholder="Ej: Programación 1" />
+    </label>
+    <label>
+      Descripción (opcional)
+      <textarea [(ngModel)]="nuevaDescripcion"></textarea>
+    </label>
+    <div class="modal-acciones">
+      <button (click)="cerrarCrear()">Cancelar</button>
+      <button class="btn-primario" (click)="crearAula()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UNIRSE CON CÓDIGO -->
+<div class="modal-backdrop" *ngIf="mostrarUnirse()" (click)="cerrarUnirse()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Unirme a un aula</h3>
+    <label>
+      Código de invitación
+      <input
+        [(ngModel)]="codigoIngresado"
+        placeholder="Ej: A3F9K2"
+        style="text-transform: uppercase"
+      />
+    </label>
+    <div class="modal-acciones">
+      <button (click)="cerrarUnirse()">Cancelar</button>
+      <button class="btn-primario" (click)="unirseConCodigo()">Unirme</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREAR TABLERO -->
+<div class="modal-backdrop" *ngIf="mostrarCrearTablero()" (click)="cerrarCrearTablero()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Crear tablero</h3>
+    <label>
+      Nombre
+      <input [(ngModel)]="nombreTablero" placeholder="Ej: Proyecto final" />
+    </label>
+    <p class="ayuda">Vas a quedar como administrador del tablero.</p>
+    <div class="modal-acciones">
+      <button (click)="cerrarCrearTablero()">Cancelar</button>
+      <button class="btn-primario" (click)="crearTablero()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UNIRSE A TABLERO -->
+<div class="modal-backdrop" *ngIf="mostrarUnirseTablero()" (click)="cerrarUnirseTablero()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Unirme a un tablero</h3>
+    <label>
+      Código del tablero
+      <input
+        [(ngModel)]="codigoTablero"
+        placeholder="Ej: A3F9K2"
+        style="text-transform: uppercase"
+      />
+    </label>
+    <div class="modal-acciones">
+      <button (click)="cerrarUnirseTablero()">Cancelar</button>
+      <button class="btn-primario" (click)="unirseATablero()">Unirme</button>
+    </div>
+  </div>
+</div>

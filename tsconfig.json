@@ -15,6 +15,10 @@
     "target": "ES2022",
     "module": "preserve"
   },
+  "exclude": [
+    "node_modules",
+    "amplify"  // <-- Añade esta línea
+  ],
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
