@@ -7,7 +7,7 @@ GrupLab reemplaza la mezcla de canales dispersos (WhatsApp, Drive, mails) por un
 
 ---
 
-##  Idea del proyecto
+##   Idea del proyecto
 
 En una cursada con trabajos grupales, el docente suele enterarse tarde de quién trabajó y quién no, y coordinar avances entre múltiples grupos a mano es un caos. GrupLab centraliza todo:
 
@@ -20,7 +20,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-##  Funcionalidades actuales
+##   Funcionalidades actuales
 
 ### Autenticación
 - Registro e inicio de sesión con **email y contraseña** (Cognito).
@@ -64,7 +64,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-##  Stack tecnológico
+##   Stack tecnológico
 
 ### Frontend
 - **Angular 21** (standalone components, signals)
@@ -91,7 +91,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-##  Arquitectura
+##   Arquitectura
 
 ```
 ┌─────────────────────────────────────┐
@@ -126,7 +126,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-##  Estructura del proyecto
+##   Estructura del proyecto
 
 ```
 gruplab/
@@ -162,7 +162,7 @@ gruplab/
 
 ---
 
-##  Cómo ejecutar el proyecto
+##   Cómo ejecutar el proyecto
 
 ### 1. Clonar el repositorio
 
