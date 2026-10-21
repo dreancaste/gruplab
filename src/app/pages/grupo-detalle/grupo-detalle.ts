@@ -799,6 +799,48 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
+  async subirArchivo(card: Card, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      const key = await this.materiaService.subirAdjunto(card.id, file);
+      await this.materiaService.registrarLog(
+        card.grupoId,
+        this.userId()!,
+        'adjuntar_archivo',
+        'Card',
+        card.id,
+      );
+      await this.recargarCards();
+      this.error.set(null);
+      input.value = '';
+      await this.abrirAdjunto(key);
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo adjuntar el archivo');
+      input.value = '';
+    }
+  }
+
+  abrirSelectorArchivo(input: HTMLInputElement | null) {
+    input?.click();
+  }
+
+  async abrirAdjunto(key: string) {
+    if (!key) return;
+    try {
+      const url = await this.materiaService.obtenerUrlAdjunto(key);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo abrir el archivo');
+    }
+  }
+
+  nombreAdjunto(key: string): string {
+    return (key || '').split('/').pop() || 'archivo';
+  }
+
   // ==== Puntuar (profesor) ====
 
   abrirPuntuar(card: Card) {

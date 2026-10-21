@@ -244,7 +244,7 @@ Se abre en `http://localhost:4200`.
 
 ### Completado 
 - [x] Autenticación con Cognito
-- [x] Modelo de datos (Materia, Grupo, Card, LogActividad)
+- [x] Modelo de datos (Materia, Grupo, Card, LogActividad, EvaluacionPar)
 - [x] Crear y unirse a aulas con código
 - [x] Crear y gestionar grupos
 - [x] Kanban con drag & drop
@@ -253,9 +253,10 @@ Se abre en `http://localhost:4200`.
 - [x] Log de actividad (registro)
 - [x] Eliminar aulas, grupos y cards
 - [x] Gestión de integrantes del grupo
+- [x] Adjuntos de archivos con S3
+- [x] Métricas mixtas de participación y evaluación de pares
 
 ### En desarrollo 
-- [ ] Adjuntos de archivos con S3
 - [ ] Vista del log de actividad para el docente
 - [ ] Mostrar emails en lugar de IDs en la lista de integrantes
 

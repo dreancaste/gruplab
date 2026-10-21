@@ -115,11 +115,25 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <div class="adjuntos" *ngIf="card.adjuntos?.length">
+                <button
+                  *ngFor="let key of card.adjuntos"
+                  class="btn-adjunto"
+                  type="button"
+                  (click)="abrirAdjunto(key || '')"
+                >
+                  📎 {{ nombreAdjunto(key || '') }}
+                </button>
+              </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
             </div>
             <div class="card-acciones">
+              <input #backlogInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
+              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(backlogInput)" title="Adjuntar archivo">
+                📎
+              </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
@@ -161,11 +175,25 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <div class="adjuntos" *ngIf="card.adjuntos?.length">
+                <button
+                  *ngFor="let key of card.adjuntos"
+                  class="btn-adjunto"
+                  type="button"
+                  (click)="abrirAdjunto(key || '')"
+                >
+                  📎 {{ nombreAdjunto(key || '') }}
+                </button>
+              </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
             </div>
             <div class="card-acciones">
+              <input #progresoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
+              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(progresoInput)" title="Adjuntar archivo">
+                📎
+              </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
@@ -213,11 +241,25 @@
               <p class="card-detalles" *ngIf="!card.revisadaPor">
                 Pendiente de revisión independiente
               </p>
+              <div class="adjuntos" *ngIf="card.adjuntos?.length">
+                <button
+                  *ngFor="let key of card.adjuntos"
+                  class="btn-adjunto"
+                  type="button"
+                  (click)="abrirAdjunto(key || '')"
+                >
+                  📎 {{ nombreAdjunto(key || '') }}
+                </button>
+              </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
             </div>
             <div class="card-acciones">
+              <input #revisionInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
+              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(revisionInput)" title="Adjuntar archivo">
+                📎
+              </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
@@ -267,11 +309,25 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <div class="adjuntos" *ngIf="card.adjuntos?.length">
+                <button
+                  *ngFor="let key of card.adjuntos"
+                  class="btn-adjunto"
+                  type="button"
+                  (click)="abrirAdjunto(key || '')"
+                >
+                  📎 {{ nombreAdjunto(key || '') }}
+                </button>
+              </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
             </div>
             <div class="card-acciones">
+              <input #hechoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
+              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(hechoInput)" title="Adjuntar archivo">
+                📎
+              </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"

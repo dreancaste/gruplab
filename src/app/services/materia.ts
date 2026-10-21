@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
+import { getUrl, uploadData } from 'aws-amplify/storage';
 import type { Schema } from '../../../amplify/data/resource';
 
 type Materia = Schema['Materia']['type'];
@@ -141,6 +142,42 @@ export class MateriaService {
     });
     if (errors?.length) throw new Error(errors[0].message);
     return data ?? [];
+  }
+
+  async obtenerCard(cardId: string) {
+    const { data, errors } = await client.models.Card.get({ id: cardId });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data ?? null;
+  }
+
+  async subirAdjunto(cardId: string, file: File): Promise<string> {
+    const fileName = file.name.replace(/\s+/g, '-');
+    const key = `cards/${cardId}/${Date.now()}-${fileName}`;
+
+    const result = await uploadData({
+      path: key,
+      data: file,
+      options: {
+        contentType: file.type || 'application/octet-stream',
+      },
+    }).result;
+
+    const card = await this.obtenerCard(cardId);
+    const adjuntoKey = result.path ?? key;
+    const adjuntos = [...(card?.adjuntos ?? []), adjuntoKey];
+
+    const { errors } = await client.models.Card.update({
+      id: cardId,
+      adjuntos,
+    });
+
+    if (errors?.length) throw new Error(errors[0].message);
+    return adjuntoKey;
+  }
+
+  async obtenerUrlAdjunto(key: string): Promise<string> {
+    const { url } = await getUrl({ path: key });
+    return url.toString();
   }
 
   async listarEvaluacionesDeGrupo(grupoId: string): Promise<EvaluacionPar[]> {
@@ -313,6 +350,30 @@ export class MateriaService {
     });
     if (errors?.length) throw new Error(errors[0].message);
     return data ?? [];
+  }
+
+  async listarLogsDeMateria(materiaId: string) {
+    const grupos = await this.listarGruposDeMateria(materiaId);
+    if (grupos.length === 0) return [];
+
+    const resultados = await Promise.all(
+      grupos.map(async (grupo) => {
+        const { data, errors } = await client.models.LogActividad.list({
+          filter: { grupoId: { eq: grupo.id } },
+        });
+        if (errors?.length) throw new Error(errors[0].message);
+        return data ?? [];
+      }),
+    );
+
+    const logs = resultados.flat();
+    logs.sort((a, b) => {
+      const aTime = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp as any).getTime();
+      const bTime = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp as any).getTime();
+      return (bTime ?? 0) - (aTime ?? 0);
+    });
+
+    return logs;
   }
 
     /**
