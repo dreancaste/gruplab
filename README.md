@@ -7,7 +7,7 @@ GrupLab reemplaza la mezcla de canales dispersos (WhatsApp, Drive, mails) por un
 
 ---
 
-## 🎯 Idea del proyecto
+##   Idea del proyecto
 
 En una cursada con trabajos grupales, el docente suele enterarse tarde de quién trabajó y quién no, y coordinar avances entre múltiples grupos a mano es un caos. GrupLab centraliza todo:
 
@@ -20,7 +20,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-## ✨ Funcionalidades actuales
+##   Funcionalidades actuales
 
 ### Autenticación
 - Registro e inicio de sesión con **email y contraseña** (Cognito).
@@ -64,7 +64,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-## 🛠️ Stack tecnológico
+##   Stack tecnológico
 
 ### Frontend
 - **Angular 21** (standalone components, signals)
@@ -91,7 +91,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-## 🏗️ Arquitectura
+##   Arquitectura
 
 ```
 ┌─────────────────────────────────────┐
@@ -126,7 +126,7 @@ El diseño sigue el enfoque de **Diseño Centrado en el Usuario (DCU)**: se defi
 
 ---
 
-## 📁 Estructura del proyecto
+##   Estructura del proyecto
 
 ```
 gruplab/
@@ -162,7 +162,7 @@ gruplab/
 
 ---
 
-## 🚀 Cómo ejecutar el proyecto
+##   Cómo ejecutar el proyecto
 
 ### 1. Clonar el repositorio
 
@@ -204,7 +204,7 @@ npx ampx sandbox --profile tu-perfil
 
 Dejá esta terminal abierta. El sandbox escucha cambios en `amplify/` y redespliega automáticamente. La primera vez tarda varios minutos.
 
-⚠️ **Solo un sandbox a la vez.** No ejecutes este comando en dos terminales simultáneas.
+ **Solo un sandbox a la vez.** No ejecutes este comando en dos terminales simultáneas.
 
 ### 5. Levantar el frontend
 
@@ -229,7 +229,7 @@ Se abre en `http://localhost:4200`.
 
 ---
 
-## 🎭 Roles y permisos
+##  Roles y permisos
 
 | Rol | Alcance | Puede hacer |
 |---|---|---|
@@ -240,9 +240,9 @@ Se abre en `http://localhost:4200`.
 
 ---
 
-## 📋 Roadmap
+##  Roadmap
 
-### Completado ✅
+### Completado 
 - [x] Autenticación con Cognito
 - [x] Modelo de datos (Materia, Grupo, Card, LogActividad)
 - [x] Crear y unirse a aulas con código
@@ -254,12 +254,12 @@ Se abre en `http://localhost:4200`.
 - [x] Eliminar aulas, grupos y cards
 - [x] Gestión de integrantes del grupo
 
-### En desarrollo 🚧
+### En desarrollo 
 - [ ] Adjuntos de archivos con S3
 - [ ] Vista del log de actividad para el docente
 - [ ] Mostrar emails en lugar de IDs en la lista de integrantes
 
-### Pendiente 📅
+### Pendiente 
 - [ ] Dashboard de participación con gráficos
 - [ ] Reglas de seguridad más estrictas (por grupo y por rol)
 - [ ] Promover alumnos a profesores (gestión de jerarquías)
@@ -269,7 +269,7 @@ Se abre en `http://localhost:4200`.
 
 ---
 
-## 📚 Contexto académico
+##  Contexto académico
 
 Este proyecto se desarrolla siguiendo el enfoque de **Diseño Centrado en el Usuario (DCU)**:
 
@@ -282,7 +282,7 @@ Este proyecto se desarrolla siguiendo el enfoque de **Diseño Centrado en el Usu
 
 ---
 
-## 📝 Notas
+##  Notas
 
 - **Node.js 22 en Windows**: puede dar un error conocido (`Cannot find module 'resource.js'`) durante el deploy del sandbox. Si ocurre, la solución más fiable es usar **Node.js 20 LTS**. Alternativamente, se ha resuelto excluyendo la carpeta `amplify` del `tsconfig.json` raíz y usando `moduleResolution: bundler` en el tsconfig local.
 - **Sandbox vs producción**: el sandbox es un entorno de desarrollo aislado en AWS. Cada usuario tiene su propio sandbox (identificado por el nombre de usuario de la máquina). No afecta a producción.
