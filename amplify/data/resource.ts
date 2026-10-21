@@ -40,11 +40,31 @@ const schema = a.schema({
       descripcion: a.string(),
       estado: a.enum(['backlog', 'progreso', 'revision', 'hecho']),
       orden: a.integer(),
+      pesoEsfuerzo: a.integer(),
+      asignados: a.string().array(),
+      fechaLimite: a.date(),
+      revisadaPor: a.string(),
+      revisadaEn: a.timestamp(),
+      completadaEn: a.timestamp(),
       grupoId: a.id().required(),
       grupo: a.belongsTo('Grupo', 'grupoId'),
       adjuntos: a.string().array(),
       puntuacion: a.integer(),
       comentarioProfesor: a.string(),
+    })
+    .authorization((allow) => [allow.authenticated()]),
+
+  EvaluacionPar: a
+    .model({
+      grupoId: a.id().required(),
+      cardId: a.id().required(),
+      hito: a.string().required(),
+      evaluadorId: a.string().required(),
+      evaluadoId: a.string().required(),
+      coordinacion: a.integer().required(),
+      comunicacion: a.integer().required(),
+      responsabilidad: a.integer().required(),
+      timestamp: a.timestamp().required(),
     })
     .authorization((allow) => [allow.authenticated()]),
 

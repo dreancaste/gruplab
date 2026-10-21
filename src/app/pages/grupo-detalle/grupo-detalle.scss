@@ -113,6 +113,7 @@
 
   .aporte-detalle {
     font-size: 0.75rem;
+    line-height: 1.5;
   }
 
   .sin-aportes,
@@ -191,6 +192,14 @@
     font-size: 0.8rem;
     color: #6b7280;
     word-break: break-word;
+  }
+
+  .card-detalles {
+    margin: 0.4rem 0 0;
+    color: #6b7280;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .puntaje {
@@ -323,6 +332,16 @@ button.btn-primario {
     font-size: 0.85rem;
     color: #6b7280;
     font-weight: 400;
+  }
+
+  .asignados-selector {
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+
+    label { display: flex; align-items: center; gap: 0.5rem; }
+    input[type='checkbox'] { width: auto; margin: 0; }
   }
 }
 

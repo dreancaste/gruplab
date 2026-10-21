@@ -40,38 +40,54 @@
     <section class="metricas-aporte" aria-labelledby="titulo-metricas">
       <div class="metricas-cabecera">
         <div>
-          <h2 id="titulo-metricas">Aporte del equipo</h2>
-          <p>Puntos por hitos de tareas. Cada persona suma una vez por tarea y etapa.</p>
+          <h2 id="titulo-metricas">Participación del equipo</h2>
+          <p>Estimación equilibrada a partir de entregas, puntualidad, colaboración y evaluación entre pares.</p>
         </div>
-        <span class="total-puntos">{{ totalPuntosAporte() }} puntos</span>
+        <span class="total-puntos" *ngIf="formulaParticipacion()">Modelo mixto</span>
       </div>
-      <p class="sin-aportes" *ngIf="totalPuntosAporte() === 0">
-        Todavía no hay hitos registrados. El aporte se cuenta desde ahora.
+      <p class="sin-aportes" *ngIf="!formulaParticipacion()">
+        Todavía no hay entregas registradas para calcular la participación.
       </p>
-      <div class="aporte-lista" *ngIf="totalPuntosAporte() > 0">
-        <article class="aporte-integrante" *ngFor="let aporte of aportesIntegrantes()">
+      <p class="metrica-formula" *ngIf="formulaParticipacion() as pesos">
+        Pesos aplicados según los datos disponibles:
+        Esfuerzo {{ pesos.esfuerzo | number:'1.0-0' }}% ·
+        Puntualidad {{ pesos.puntualidad | number:'1.0-0' }}% ·
+        Calidad/colaboración {{ pesos.calidadColaboracion | number:'1.0-0' }}% ·
+        Pares {{ pesos.pares | number:'1.0-0' }}%.
+      </p>
+      <div class="aporte-lista" *ngIf="formulaParticipacion()">
+        <article class="aporte-integrante" *ngFor="let metricas of metricasParticipacion()">
           <div class="aporte-nombre">
-            <strong>{{ aporte.usuarioId === userId() ? 'Vos' : aporte.usuarioId }}</strong>
-            <span>{{ aporte.puntos }} puntos · {{ totalPuntosAporte() ? (aporte.puntos / totalPuntosAporte() | percent:'1.0-0') : '0%' }}</span>
+            <strong>{{ metricas.usuarioId === userId() ? 'Vos' : metricas.usuarioId }}</strong>
+            <span>
+              {{ metricas.participacion === null ? 'Sin datos suficientes' : (metricas.participacion | number:'1.0-1') + '%' }}
+            </span>
           </div>
           <div
             class="aporte-barra"
             role="progressbar"
-            [attr.aria-valuenow]="aporte.puntos"
-            [attr.aria-valuemax]="totalPuntosAporte()"
+            [attr.aria-valuenow]="metricas.participacion ?? 0"
+            [attr.aria-valuemax]="100"
             aria-label="Porcentaje de puntos de aporte"
           >
-            <span [style.width.%]="aporte.puntos / totalPuntosAporte() * 100"></span>
+            <span [style.width.%]="metricas.participacion ?? 0"></span>
           </div>
           <p class="aporte-detalle">
-            Backlog {{ aporte.tareasCreadas }} × 1
-            · En progreso {{ aporte.tareasEnProgreso }} × 2
-            · Revisión {{ aporte.tareasEnRevision }} × 3
+            Esfuerzo {{ metricas.esfuerzo === null ? '—' : (metricas.esfuerzo | number:'1.0-0') + '%' }}
+            · Puntualidad {{ metricas.puntualidad === null ? '—' : (metricas.puntualidad | number:'1.0-0') + '%' }}
+            · Calidad {{ metricas.calidad === null ? '—' : (metricas.calidad | number:'1.0-0') + '%' }}
+            · Revisiones {{ metricas.colaboracion === null ? '—' : (metricas.colaboracion | number:'1.0-0') + '%' }}
+            · Pares {{ metricas.evaluacionPares === null ? '—' : (metricas.evaluacionPares | number:'1.0-0') + '%' }}
+          </p>
+          <p class="evaluaciones-recibidas">
+            Evaluaciones de pares recibidas: {{ metricas.evaluacionesRecibidas }}
           </p>
         </article>
       </div>
       <p class="metricas-nota">
-        Es una referencia de actividad registrada, no una calificación ni una medida de esfuerzo.
+        50% tareas completadas según esfuerzo · 20% puntualidad · 15% calidad y revisiones · 15% pares.
+        Si falta un tipo de dato, los pesos disponibles se redistribuyen para sumar 100%.
+        Es una señal para conversar, no una calificación automática.
       </p>
     </section>
 
@@ -93,6 +109,11 @@
               <p class="card-titulo">{{ card.titulo }}</p>
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
+              </p>
+              <p class="card-detalles">
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
+                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
@@ -135,6 +156,11 @@
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
               </p>
+              <p class="card-detalles">
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
+                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
+              </p>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
@@ -176,6 +202,17 @@
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
               </p>
+              <p class="card-detalles">
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
+                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
+              </p>
+              <p class="card-detalles" *ngIf="card.revisadaPor">
+                Revisada por {{ card.revisadaPor }}
+              </p>
+              <p class="card-detalles" *ngIf="!card.revisadaPor">
+                Pendiente de revisión independiente
+              </p>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
@@ -188,6 +225,14 @@
                 title="Puntuar"
               >
                 ⭐
+              </button>
+              <button
+                class="btn-mini"
+                *ngIf="puedeRevisar(card)"
+                (click)="marcarRevisada(card)"
+                title="Registrar revisión de un integrante"
+              >
+                🔎
               </button>
               <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
                 ✏️
@@ -217,6 +262,11 @@
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
               </p>
+              <p class="card-detalles">
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
+                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
+              </p>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
               </p>
@@ -235,6 +285,14 @@
               </button>
               <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
                 🗑️
+              </button>
+              <button
+                class="btn-mini"
+                *ngIf="evaluadosPendientes(card).length"
+                (click)="abrirEvaluacion(card)"
+                title="Evaluar pares para esta tarea"
+              >
+                🤝
               </button>
             </div>
           </div>
@@ -262,6 +320,7 @@
 <div class="modal-backdrop" *ngIf="mostrarModalCard()" (click)="cerrarModalCard()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>{{ modoEdicionCard() ? 'Editar tarea' : 'Nueva tarea' }}</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
 
     <label>
       Título
@@ -273,6 +332,36 @@
       <textarea [(ngModel)]="cardDescripcion"></textarea>
     </label>
 
+    <label>
+      Esfuerzo
+      <select [(ngModel)]="cardPesoEsfuerzo" [disabled]="cardPlanificacionBloqueada">
+        <option [ngValue]="1">1 · Chico</option>
+        <option [ngValue]="3">3 · Mediano</option>
+        <option [ngValue]="5">5 · Grande</option>
+      </select>
+    </label>
+
+    <label>
+      Fecha límite (opcional)
+      <input type="date" [(ngModel)]="cardFechaLimite" [disabled]="cardPlanificacionBloqueada" />
+    </label>
+
+    <fieldset class="asignados-selector" [disabled]="cardPlanificacionBloqueada">
+      <legend>Asignar a integrantes</legend>
+      <label *ngFor="let integranteId of integrantesGrupo()" class="asignado-item">
+        <input
+          type="checkbox"
+          [checked]="asignadosSeleccionados().includes(integranteId)"
+          (change)="toggleAsignado(integranteId)"
+        />
+        {{ integranteId === userId() ? 'Vos' : integranteId }}
+      </label>
+    </fieldset>
+
+    <p class="ayuda" *ngIf="cardPlanificacionBloqueada">
+      El esfuerzo, la asignación y la fecha límite se congelan al iniciar la tarea para proteger la métrica.
+    </p>
+
     <p class="ayuda" *ngIf="!modoEdicionCard()">
       La tarea se crea en Backlog. Arrastrala entre columnas para avanzar.
     </p>
@@ -282,6 +371,45 @@
       <button class="btn-primario" (click)="guardarCard()">
         {{ modoEdicionCard() ? 'Guardar' : 'Crear' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVALUACION ENTRE PARES -->
+<div class="modal-backdrop" *ngIf="tarjetaAEvaluar()" (click)="cerrarEvaluacion()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Evaluar a un compañero</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
+    <p class="ayuda">{{ tarjetaAEvaluar()?.titulo }}</p>
+
+    <label>
+      Integrante
+      <select [(ngModel)]="evaluadoSeleccionadoId">
+        <option
+          *ngFor="let integranteId of evaluadosPendientes(tarjetaAEvaluar()!)"
+          [value]="integranteId"
+        >
+          {{ integranteId }}
+        </option>
+      </select>
+    </label>
+
+    <label>
+      Coordinación (1 a 5)
+      <input type="number" min="1" max="5" step="1" [(ngModel)]="puntuacionCoordinacion" />
+    </label>
+    <label>
+      Comunicación (1 a 5)
+      <input type="number" min="1" max="5" step="1" [(ngModel)]="puntuacionComunicacion" />
+    </label>
+    <label>
+      Responsabilidad (1 a 5)
+      <input type="number" min="1" max="5" step="1" [(ngModel)]="puntuacionResponsabilidad" />
+    </label>
+
+    <div class="modal-acciones">
+      <button (click)="cerrarEvaluacion()">Cancelar</button>
+      <button class="btn-primario" (click)="guardarEvaluacion()">Enviar evaluación</button>
     </div>
   </div>
 </div>

@@ -4,6 +4,7 @@ import type { Schema } from '../../../amplify/data/resource';
 
 type Materia = Schema['Materia']['type'];
 type Grupo = Schema['Grupo']['type'];
+type EvaluacionPar = Schema['EvaluacionPar']['type'];
 
 const client = generateClient<Schema>();
 
@@ -142,6 +143,34 @@ export class MateriaService {
     return data ?? [];
   }
 
+  async listarEvaluacionesDeGrupo(grupoId: string): Promise<EvaluacionPar[]> {
+    const { data, errors } = await client.models.EvaluacionPar.list({
+      filter: { grupoId: { eq: grupoId } },
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data ?? [];
+  }
+
+  async guardarEvaluacionPar(
+    evaluacion: Pick<
+      EvaluacionPar,
+      | 'grupoId'
+      | 'cardId'
+      | 'hito'
+      | 'evaluadorId'
+      | 'evaluadoId'
+      | 'coordinacion'
+      | 'comunicacion'
+      | 'responsabilidad'
+      | 'timestamp'
+    > & { id: string },
+  ): Promise<EvaluacionPar> {
+    const { data, errors } = await client.models.EvaluacionPar.create(evaluacion);
+    if (errors?.length) throw new Error(errors[0].message);
+    if (!data) throw new Error('No se pudo guardar la evaluación de pares');
+    return data;
+  }
+
   /**
    * Obtiene un grupo por ID.
    */
@@ -204,6 +233,11 @@ export class MateriaService {
   async crearCard(
     grupoId: string,
     titulo: string,
+    detalles: {
+      pesoEsfuerzo: 1 | 3 | 5;
+      asignados: string[];
+      fechaLimite?: string;
+    },
     estado: 'backlog' | 'progreso' | 'revision' | 'hecho' = 'backlog',
   ) {
     const cards = await this.listarCardsDeGrupo(grupoId);
@@ -214,6 +248,9 @@ export class MateriaService {
       titulo,
       estado,
       orden,
+      pesoEsfuerzo: detalles.pesoEsfuerzo,
+      asignados: detalles.asignados,
+      ...(detalles.fechaLimite ? { fechaLimite: detalles.fechaLimite } : {}),
       adjuntos: [],
     });
     if (errors?.length) throw new Error(errors[0].message);
@@ -227,6 +264,12 @@ export class MateriaService {
       descripcion: string;
       estado: 'backlog' | 'progreso' | 'revision' | 'hecho';
       orden: number;
+      pesoEsfuerzo: 1 | 3 | 5;
+      asignados: string[];
+      fechaLimite: string | null;
+      revisadaPor: string | null;
+      revisadaEn: number | null;
+      completadaEn: number | null;
       puntuacion: number;
       comentarioProfesor: string;
     }>,

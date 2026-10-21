@@ -15,13 +15,232 @@ import type { Schema } from '../../../../amplify/data/resource';
 type Card = Schema['Card']['type'];
 type Grupo = Schema['Grupo']['type'];
 type LogActividad = Schema['LogActividad']['type'];
+type EvaluacionPar = Schema['EvaluacionPar']['type'];
 type Estado = 'backlog' | 'progreso' | 'revision' | 'hecho';
 
-const PUNTAJE_POR_ACCION: Record<string, number> = {
-  crear_backlog: 1,
-  mover_a_progreso: 2,
-  mover_a_revision: 3,
-};
+const PESOS_PARTICIPACION = {
+  esfuerzo: 50,
+  puntualidad: 20,
+  colaboracionCalidad: 15,
+  pares: 15,
+} as const;
+
+const ACCIONES_CON_PUNTOS = new Set([
+  'crear_backlog',
+  'mover_a_progreso',
+  'mover_a_revision',
+  'revisar_card',
+  'completar_card',
+  'reabrir_card',
+]);
+
+export interface MetricasParticipacion {
+  usuarioId: string;
+  esfuerzo: number | null;
+  puntualidad: number | null;
+  calidad: number | null;
+  colaboracion: number | null;
+  evaluacionPares: number | null;
+  participacion: number | null;
+  evaluacionesRecibidas: number;
+}
+
+export function calcularMetricasParticipacion(
+  integrantes: readonly string[],
+  cards: readonly Card[],
+  logs: readonly LogActividad[],
+  evaluaciones: readonly EvaluacionPar[],
+): MetricasParticipacion[] {
+  const miembros = [...new Set(integrantes.filter(Boolean))];
+  const miembroSet = new Set(miembros);
+  const cardPorId = new Map(cards.map((card) => [card.id, card]));
+  const logsPorTarjeta = new Map<string, LogActividad[]>();
+  for (const log of logs) {
+    if (log.entidad !== 'Card' || !ACCIONES_CON_PUNTOS.has(log.accion)) continue;
+    const lista = logsPorTarjeta.get(log.entidadId) ?? [];
+    lista.push(log);
+    logsPorTarjeta.set(log.entidadId, lista);
+  }
+
+  const esfuerzoEntregado = new Map(miembros.map((id) => [id, 0]));
+  const esfuerzoATiempo = new Map(miembros.map((id) => [id, 0]));
+  const esfuerzoConFecha = new Map(miembros.map((id) => [id, 0]));
+  const esfuerzoSinRetrabajo = new Map(miembros.map((id) => [id, 0]));
+  const esfuerzoCompletado = new Map(miembros.map((id) => [id, 0]));
+  const revisiones = new Map(miembros.map((id) => [id, new Set<string>()]));
+  let esfuerzoEntregadoTotal = 0;
+  let esfuerzoConFechaTotal = 0;
+  let calidadAplicable = false;
+
+  for (const card of cards) {
+    const eventos = logsPorTarjeta.get(card.id) ?? [];
+    const completada = eventos.some((log) => log.accion === 'completar_card');
+    const integrantesAsignados = [...new Set(card.asignados ?? [])]
+      .filter((id): id is string => !!id && miembroSet.has(id));
+    const peso = [1, 3, 5].includes(card.pesoEsfuerzo ?? 1) ? card.pesoEsfuerzo ?? 1 : 1;
+
+    for (const evento of eventos) {
+      if (
+        evento.accion === 'revisar_card' &&
+        completada &&
+        miembroSet.has(evento.usuarioId) &&
+        !integrantesAsignados.includes(evento.usuarioId)
+      ) {
+        revisiones.get(evento.usuarioId)?.add(card.id);
+      }
+    }
+
+    if (card.estado !== 'hecho' || !completada || !integrantesAsignados.length) continue;
+
+    const porIntegrante = peso / integrantesAsignados.length;
+    const huboRetrabajo = eventos.some((log) => log.accion === 'reabrir_card');
+    calidadAplicable = true;
+    for (const asignado of integrantesAsignados) {
+      esfuerzoEntregado.set(asignado, esfuerzoEntregado.get(asignado)! + porIntegrante);
+      esfuerzoEntregadoTotal += porIntegrante;
+      esfuerzoCompletado.set(asignado, esfuerzoCompletado.get(asignado)! + porIntegrante);
+      if (!huboRetrabajo) esfuerzoSinRetrabajo.set(asignado, esfuerzoSinRetrabajo.get(asignado)! + porIntegrante);
+
+      if (card.fechaLimite && card.completadaEn != null) {
+        esfuerzoConFecha.set(asignado, esfuerzoConFecha.get(asignado)! + porIntegrante);
+        esfuerzoConFechaTotal += porIntegrante;
+        const completadaEl = new Date(card.completadaEn * 1000);
+        const completadaFecha = [
+          completadaEl.getFullYear(),
+          String(completadaEl.getMonth() + 1).padStart(2, '0'),
+          String(completadaEl.getDate()).padStart(2, '0'),
+        ].join('-');
+        if (completadaFecha <= card.fechaLimite) {
+          esfuerzoATiempo.set(asignado, esfuerzoATiempo.get(asignado)! + porIntegrante);
+        }
+      }
+    }
+  }
+
+  const entregas = new Map(miembros.map((id) => [
+    id,
+    esfuerzoEntregadoTotal ? esfuerzoEntregado.get(id)! / esfuerzoEntregadoTotal : 0,
+  ]));
+  const puntualidadPorPersona = new Map(miembros.map((id) => [
+    id,
+    esfuerzoConFecha.get(id)! ? esfuerzoATiempo.get(id)! / esfuerzoConFecha.get(id)! : 0,
+  ]));
+  const calidadPorPersona = new Map(miembros.map((id) => [
+    id,
+    esfuerzoCompletado.get(id)! ? esfuerzoSinRetrabajo.get(id)! / esfuerzoCompletado.get(id)! : 0,
+  ]));
+  const colaboracionPorPersona = new Map(miembros.map((id) => [
+    id,
+    revisiones.get(id)?.size ?? 0,
+  ]));
+  const puntuacionesPares = new Map(miembros.map((id) => [id, [] as number[]]));
+  for (const evaluacion of evaluaciones) {
+    if (
+      !miembroSet.has(evaluacion.evaluadoId) ||
+      !miembroSet.has(evaluacion.evaluadorId) ||
+      evaluacion.evaluadoId === evaluacion.evaluadorId
+    ) continue;
+    const card = cardPorId.get(evaluacion.cardId);
+    const hitoRegistrado = (logsPorTarjeta.get(evaluacion.cardId) ?? [])
+      .some((log) => log.accion === 'completar_card');
+    if (!card || card.estado !== 'hecho' || !hitoRegistrado) continue;
+    const puntuaciones = puntuacionesPares.get(evaluacion.evaluadoId)!;
+    puntuaciones.push(
+      (evaluacion.coordinacion + evaluacion.comunicacion + evaluacion.responsabilidad) / 3,
+    );
+  }
+
+  const hayEvaluacionCompleta = miembros.length > 1 &&
+    miembros.every((id) => (puntuacionesPares.get(id)?.length ?? 0) > 0);
+  const paresPorPersona = new Map(miembros.map((id) => [
+    id,
+    hayEvaluacionCompleta
+      ? puntuacionesPares.get(id)!.reduce((total, score) => total + score, 0) /
+        puntuacionesPares.get(id)!.length
+      : 0,
+  ]));
+
+  const esfuerzo = normalizarParticipacion(entregas, esfuerzoEntregadoTotal > 0);
+  const puntualidad = normalizarParticipacion(puntualidadPorPersona, esfuerzoConFechaTotal > 0);
+  const calidad = normalizarParticipacion(calidadPorPersona, calidadAplicable);
+  const colaboracion = normalizarParticipacion(
+    colaboracionPorPersona,
+    [...colaboracionPorPersona.values()].some((count) => count > 0),
+  );
+  const pares = normalizarParticipacion(paresPorPersona, hayEvaluacionCompleta);
+  const metricasDisponibles = [
+    esfuerzo,
+    puntualidad,
+    calidad !== null || colaboracion !== null ? combinarParticipaciones(calidad, colaboracion) : null,
+    pares,
+  ];
+  const pesosDisponibles = [
+    PESOS_PARTICIPACION.esfuerzo,
+    PESOS_PARTICIPACION.puntualidad,
+    PESOS_PARTICIPACION.colaboracionCalidad,
+    PESOS_PARTICIPACION.pares,
+  ];
+  const pesoTotal = metricasDisponibles.reduce(
+    (total, metrica, indice) => total + (metrica ? pesosDisponibles[indice] : 0),
+    0,
+  );
+
+  return miembros.map((usuarioId, indice) => {
+    const comparte = (metrica: Map<string, number> | null) => metrica?.get(usuarioId) ?? null;
+    const componentes = [
+      esfuerzo?.get(usuarioId) ?? null,
+      puntualidad?.get(usuarioId) ?? null,
+      combinarParticipaciones(calidad, colaboracion)?.get(usuarioId) ?? null,
+      pares?.get(usuarioId) ?? null,
+    ];
+    const participacion = pesoTotal
+      ? componentes.reduce<number>(
+          (total, porcentaje, componente) =>
+            total + (porcentaje ?? 0) * pesosDisponibles[componente] / pesoTotal,
+          0,
+        )
+      : null;
+    return {
+      usuarioId,
+      esfuerzo: comparte(esfuerzo),
+      puntualidad: comparte(puntualidad),
+      calidad: comparte(calidad),
+      colaboracion: comparte(colaboracion),
+      evaluacionPares: comparte(pares),
+      participacion,
+      evaluacionesRecibidas: puntuacionesPares.get(usuarioId)?.length ?? 0,
+    };
+  });
+}
+
+function normalizarParticipacion(
+  valores: Map<string, number>,
+  disponible: boolean,
+): Map<string, number> | null {
+  const total = [...valores.values()].reduce((suma, valor) => suma + valor, 0);
+  if (!disponible) return null;
+  if (!total) {
+    const integrantes = valores.size;
+    return integrantes
+      ? new Map([...valores.keys()].map((id) => [id, 100 / integrantes]))
+      : null;
+  }
+  return new Map([...valores].map(([id, valor]) => [id, valor / total * 100]));
+}
+
+function combinarParticipaciones(
+  ...metricas: Array<Map<string, number> | null>
+): Map<string, number> | null {
+  const disponibles = metricas.filter((metrica): metrica is Map<string, number> => metrica !== null);
+  if (!disponibles.length) return null;
+  const ids = new Set(disponibles.flatMap((metrica) => [...metrica.keys()]));
+  return new Map(
+    [...ids].map((id) => [
+      id,
+      disponibles.reduce((total, metrica) => total + (metrica.get(id) ?? 0), 0) / disponibles.length,
+    ]),
+  );
+}
 
 @Component({
   selector: 'app-grupo-detalle',
@@ -41,29 +260,43 @@ export class GrupoDetalle implements OnInit {
 
   todasLasCards = signal<Card[]>([]);
   logs = signal<LogActividad[]>([]);
-
-  aportesIntegrantes = computed(() => {
-    const integrantes = this.grupo()?.integrantes ?? [];
-    const logs = this.logs();
-    return integrantes.map((usuarioId) => {
-      const actividades = logs.filter((log) => log.usuarioId === usuarioId);
-      const tareasCreadas = actividades.filter((log) => log.accion === 'crear_backlog').length;
-      const tareasEnProgreso = actividades.filter((log) => log.accion === 'mover_a_progreso').length;
-      const tareasEnRevision = actividades.filter((log) => log.accion === 'mover_a_revision').length;
-      return {
-        usuarioId,
-        tareasCreadas,
-        tareasEnProgreso,
-        tareasEnRevision,
-        puntos: tareasCreadas * PUNTAJE_POR_ACCION['crear_backlog'] +
-          tareasEnProgreso * PUNTAJE_POR_ACCION['mover_a_progreso'] +
-          tareasEnRevision * PUNTAJE_POR_ACCION['mover_a_revision'],
-      };
-    });
-  });
-  totalPuntosAporte = computed(() =>
-    this.aportesIntegrantes().reduce((total, integrante) => total + integrante.puntos, 0),
+  evaluaciones = signal<EvaluacionPar[]>([]);
+  integrantesGrupo = computed(() =>
+    (this.grupo()?.integrantes ?? []).filter(
+      (integrante): integrante is string => !!integrante,
+    ),
   );
+
+  metricasParticipacion = computed(() => {
+    return calcularMetricasParticipacion(
+      this.integrantesGrupo(),
+      this.todasLasCards(),
+      this.logs(),
+      this.evaluaciones(),
+    );
+  });
+  formulaParticipacion = computed(() => {
+    const metrics = this.metricasParticipacion();
+    const disponible = (key: keyof MetricasParticipacion) =>
+      metrics.some((integrante) => integrante[key] !== null);
+    const factores = [
+      disponible('esfuerzo') ? PESOS_PARTICIPACION.esfuerzo : 0,
+      disponible('puntualidad') ? PESOS_PARTICIPACION.puntualidad : 0,
+      disponible('calidad') || disponible('colaboracion')
+        ? PESOS_PARTICIPACION.colaboracionCalidad
+        : 0,
+      disponible('evaluacionPares') ? PESOS_PARTICIPACION.pares : 0,
+    ];
+    const suma = factores.reduce((total, factor) => total + factor, 0);
+    return suma
+      ? {
+          esfuerzo: factores[0] / suma * 100,
+          puntualidad: factores[1] / suma * 100,
+          calidadColaboracion: factores[2] / suma * 100,
+          pares: factores[3] / suma * 100,
+        }
+      : null;
+  });
 
   backlog = computed(() =>
     this.ordenar(this.todasLasCards().filter((c) => c.estado === 'backlog'))
@@ -84,6 +317,14 @@ export class GrupoDetalle implements OnInit {
     const uid = this.userId();
     return !!g && !!uid && g.adminId === uid;
   });
+  puedeRevisar = (card: Card): boolean => {
+    const usuarioId = this.userId();
+    return !!usuarioId &&
+      card.estado === 'revision' &&
+      this.integrantesGrupo().includes(usuarioId) &&
+      !(card.asignados ?? []).includes(usuarioId) &&
+      card.revisadaPor !== usuarioId;
+  };
 
   // Detectar si es tablero independiente
   get esTableroIndependiente(): boolean {
@@ -94,8 +335,19 @@ export class GrupoDetalle implements OnInit {
   mostrarModalCard = signal(false);
   modoEdicionCard = signal(false);
   cardEditandoId = signal<string | null>(null);
+  cardPlanificacionBloqueada = false;
   cardTitulo = '';
   cardDescripcion = '';
+  cardPesoEsfuerzo: 1 | 3 | 5 = 1;
+  cardFechaLimite = '';
+  asignadosSeleccionados = signal<string[]>([]);
+
+  // Evaluación entre pares al completar una tarea
+  tarjetaAEvaluar = signal<Card | null>(null);
+  evaluadoSeleccionadoId = '';
+  puntuacionCoordinacion = 5;
+  puntuacionComunicacion = 5;
+  puntuacionResponsabilidad = 5;
 
   // Modal puntuar (profesor)
   mostrarModalPuntuar = signal(false);
@@ -147,6 +399,7 @@ export class GrupoDetalle implements OnInit {
 
       await this.recargarCards();
       await this.recargarLogs();
+      await this.recargarEvaluaciones();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al cargar el grupo');
     } finally {
@@ -171,6 +424,124 @@ export class GrupoDetalle implements OnInit {
     this.logs.set(await this.materiaService.listarLogsDeGrupo(g.id));
   }
 
+  private async recargarEvaluaciones() {
+    const g = this.grupo();
+    if (!g) return;
+    this.evaluaciones.set(await this.materiaService.listarEvaluacionesDeGrupo(g.id));
+  }
+
+  async marcarRevisada(card: Card) {
+    const grupo = this.grupo();
+    const usuarioId = this.userId();
+    if (!grupo || !usuarioId || card.estado !== 'revision') return;
+    if (!this.integrantesGrupo().includes(usuarioId)) {
+      this.error.set('Solo los integrantes del grupo pueden revisar esta tarea.');
+      return;
+    }
+    if ((card.asignados ?? []).includes(usuarioId)) {
+      this.error.set('La revisión debe hacerla alguien que no esté asignado a esta tarea.');
+      return;
+    }
+
+    try {
+      await this.materiaService.actualizarCard(card.id, {
+        revisadaPor: usuarioId,
+        revisadaEn: Math.floor(Date.now() / 1000),
+      });
+      await this.materiaService.registrarLog(
+        grupo.id,
+        usuarioId,
+        'revisar_card',
+        'Card',
+        card.id,
+      );
+      await this.recargarCards();
+      await this.recargarLogs();
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Error al registrar la revisión');
+    }
+  }
+
+  evaluadosPendientes(card: Card): string[] {
+    const usuarioId = this.userId();
+    if (!usuarioId || card.estado !== 'hecho') return [];
+    return this.integrantesGrupo().filter(
+      (integranteId) =>
+        integranteId !== usuarioId &&
+        !this.evaluaciones().some(
+          (evaluacion) =>
+            evaluacion.cardId === card.id &&
+            evaluacion.hito === 'hecho' &&
+            evaluacion.evaluadorId === usuarioId &&
+            evaluacion.evaluadoId === integranteId,
+        ),
+    );
+  }
+
+  abrirEvaluacion(card: Card) {
+    const pendientes = this.evaluadosPendientes(card);
+    if (!pendientes.length) return;
+    this.error.set(null);
+    this.tarjetaAEvaluar.set(card);
+    this.evaluadoSeleccionadoId = pendientes[0];
+    this.puntuacionCoordinacion = 5;
+    this.puntuacionComunicacion = 5;
+    this.puntuacionResponsabilidad = 5;
+  }
+
+  cerrarEvaluacion() {
+    this.tarjetaAEvaluar.set(null);
+    this.evaluadoSeleccionadoId = '';
+  }
+
+  async guardarEvaluacion() {
+    const card = this.tarjetaAEvaluar();
+    const grupo = this.grupo();
+    const evaluadorId = this.userId();
+    const evaluadoId = this.evaluadoSeleccionadoId;
+    if (!card || !grupo || !evaluadorId || !evaluadoId) return;
+    if (!this.evaluadosPendientes(card).includes(evaluadoId)) {
+      this.error.set('Ya evaluaste a esta persona para esta tarea.');
+      return;
+    }
+
+    const puntuaciones = [
+      this.puntuacionCoordinacion,
+      this.puntuacionComunicacion,
+      this.puntuacionResponsabilidad,
+    ];
+    if (puntuaciones.some((puntuacion) => !Number.isInteger(puntuacion) || puntuacion < 1 || puntuacion > 5)) {
+      this.error.set('Cada respuesta debe ser un número entero entre 1 y 5.');
+      return;
+    }
+
+    const id = [
+      'pares',
+      card.id,
+      'hecho',
+      evaluadorId,
+      evaluadoId,
+    ].map(encodeURIComponent).join('|');
+    try {
+      await this.materiaService.guardarEvaluacionPar({
+        id,
+        grupoId: grupo.id,
+        cardId: card.id,
+        hito: 'hecho',
+        evaluadorId,
+        evaluadoId,
+        coordinacion: this.puntuacionCoordinacion,
+        comunicacion: this.puntuacionComunicacion,
+        responsabilidad: this.puntuacionResponsabilidad,
+        timestamp: Math.floor(Date.now() / 1000),
+      });
+      await this.recargarEvaluaciones();
+      this.cerrarEvaluacion();
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Error al guardar la evaluación');
+    }
+  }
+
   volver() {
     const g = this.grupo();
     if (g?.materiaId) {
@@ -192,7 +563,19 @@ export class GrupoDetalle implements OnInit {
       return;
     }
 
-    const estadoAnterior = card.estado;
+    const usuarioId = this.userId();
+    if (!usuarioId) return;
+    const estadoAnterior = card.estado ?? 'backlog';
+    if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
+      if (!(card.asignados ?? []).some((id) => !!id)) {
+        this.error.set('Asigná al menos una persona antes de completar la tarea.');
+        return;
+      }
+      if (!card.revisadaPor || (card.asignados ?? []).includes(card.revisadaPor)) {
+        this.error.set('Antes de completar, otra persona del grupo debe revisar esta tarea.');
+        return;
+      }
+    }
 
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -209,14 +592,34 @@ export class GrupoDetalle implements OnInit {
       const listasActualizadas = event.previousContainer === event.container
         ? [{ cards: event.container.data, estado: nuevoEstado }]
         : [
-            { cards: event.previousContainer.data, estado: estadoAnterior as Estado },
+            { cards: event.previousContainer.data, estado: estadoAnterior },
             { cards: event.container.data, estado: nuevoEstado },
           ];
-      const actualizaciones = new Map<string, { estado: Estado; orden: number }>();
+      const actualizaciones = new Map<
+        string,
+        Partial<{
+          estado: Estado;
+          orden: number;
+          revisadaPor: string | null;
+          revisadaEn: number | null;
+          completadaEn: number | null;
+        }>
+      >();
       for (const lista of listasActualizadas) {
         lista.cards.forEach((tarjeta, orden) => {
           actualizaciones.set(tarjeta.id, { estado: lista.estado, orden });
         });
+      }
+      const cambiosTarjeta = actualizaciones.get(card.id)!;
+      if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
+        cambiosTarjeta.completadaEn = Math.floor(Date.now() / 1000);
+      } else if (nuevoEstado !== 'hecho' && estadoAnterior === 'hecho') {
+        cambiosTarjeta.completadaEn = null;
+        cambiosTarjeta.revisadaPor = null;
+        cambiosTarjeta.revisadaEn = null;
+      } else if (nuevoEstado === 'revision' && estadoAnterior !== 'revision') {
+        cambiosTarjeta.revisadaPor = null;
+        cambiosTarjeta.revisadaEn = null;
       }
 
       const tarjetasModificadas = this.todasLasCards().filter((tarjeta) => {
@@ -237,44 +640,78 @@ export class GrupoDetalle implements OnInit {
 
       if (estadoAnterior !== nuevoEstado) {
         const accion = this.accionParaTransicion(nuevoEstado);
-        if (accion && !this.logs().some(
-          (log) => log.usuarioId === this.userId() &&
+        const esHitoUnico = accion === 'mover_a_progreso' || accion === 'mover_a_revision';
+        if (accion && (!esHitoUnico || !this.logs().some(
+          (log) => log.usuarioId === usuarioId &&
             log.entidadId === card.id &&
             log.accion === accion,
-        )) {
-          await this.materiaService.registrarLog(card.grupoId, this.userId()!, accion, 'Card', card.id);
+        ))) {
+          await this.materiaService.registrarLog(card.grupoId, usuarioId, accion, 'Card', card.id);
+        }
+        if (nuevoEstado === 'hecho') await this.recargarEvaluaciones();
+        if (estadoAnterior === 'hecho' && nuevoEstado !== 'hecho') {
+          await this.materiaService.registrarLog(card.grupoId, usuarioId, 'reabrir_card', 'Card', card.id);
         }
       }
       await this.recargarCards();
       await this.recargarLogs();
+      await this.recargarEvaluaciones();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al mover la card');
       await this.recargarCards();
+      await this.recargarLogs();
     }
   }
 
   private accionParaTransicion(estado: Estado): string | null {
     if (estado === 'progreso') return 'mover_a_progreso';
     if (estado === 'revision') return 'mover_a_revision';
+    if (estado === 'hecho') return 'completar_card';
     return null;
   }
 
   // ==== Crear / editar card ====
 
   abrirCrearCard() {
+    this.error.set(null);
     this.modoEdicionCard.set(false);
     this.cardEditandoId.set(null);
+    this.cardPlanificacionBloqueada = false;
     this.cardTitulo = '';
     this.cardDescripcion = '';
+    this.cardPesoEsfuerzo = 1;
+    this.cardFechaLimite = '';
+    this.asignadosSeleccionados.set(this.userId() ? [this.userId()!] : []);
     this.mostrarModalCard.set(true);
   }
 
   abrirEditarCard(card: Card) {
+    this.error.set(null);
     this.modoEdicionCard.set(true);
     this.cardEditandoId.set(card.id);
+    this.cardPlanificacionBloqueada =
+      card.estado !== 'backlog' &&
+      card.pesoEsfuerzo != null &&
+      !!card.asignados?.length;
     this.cardTitulo = card.titulo;
     this.cardDescripcion = card.descripcion ?? '';
+    this.cardPesoEsfuerzo = [1, 3, 5].includes(card.pesoEsfuerzo ?? 1)
+      ? (card.pesoEsfuerzo ?? 1) as 1 | 3 | 5
+      : 1;
+    this.cardFechaLimite = card.fechaLimite ?? '';
+    this.asignadosSeleccionados.set(
+      (card.asignados ?? []).filter((integrante): integrante is string => !!integrante),
+    );
     this.mostrarModalCard.set(true);
+  }
+
+  toggleAsignado(integranteId: string) {
+    const asignados = this.asignadosSeleccionados();
+    this.asignadosSeleccionados.set(
+      asignados.includes(integranteId)
+        ? asignados.filter((id) => id !== integranteId)
+        : [...asignados, integranteId],
+    );
   }
 
   cerrarModalCard() {
@@ -282,17 +719,30 @@ export class GrupoDetalle implements OnInit {
     this.cardTitulo = '';
     this.cardDescripcion = '';
     this.cardEditandoId.set(null);
+    this.cardPlanificacionBloqueada = false;
+    this.asignadosSeleccionados.set([]);
   }
 
   async guardarCard() {
     const g = this.grupo();
     if (!g || !this.cardTitulo.trim()) return;
+    if (!this.asignadosSeleccionados().length) {
+      this.error.set('Asigná la tarea a por lo menos un integrante.');
+      return;
+    }
 
     try {
       if (this.modoEdicionCard() && this.cardEditandoId()) {
         await this.materiaService.actualizarCard(this.cardEditandoId()!, {
           titulo: this.cardTitulo.trim(),
           descripcion: this.cardDescripcion.trim(),
+          ...(!this.cardPlanificacionBloqueada
+            ? {
+                pesoEsfuerzo: this.cardPesoEsfuerzo,
+                asignados: this.asignadosSeleccionados(),
+                fechaLimite: this.cardFechaLimite || null,
+              }
+            : {}),
         });
         await this.materiaService.registrarLog(
           g.id,
@@ -302,7 +752,11 @@ export class GrupoDetalle implements OnInit {
           this.cardEditandoId()!
         );
       } else {
-        const nueva = await this.materiaService.crearCard(g.id, this.cardTitulo.trim());
+        const nueva = await this.materiaService.crearCard(g.id, this.cardTitulo.trim(), {
+          pesoEsfuerzo: this.cardPesoEsfuerzo,
+          asignados: this.asignadosSeleccionados(),
+          ...(this.cardFechaLimite ? { fechaLimite: this.cardFechaLimite } : {}),
+        });
         if (this.cardDescripcion.trim()) {
           await this.materiaService.actualizarCard(nueva.id, {
             descripcion: this.cardDescripcion.trim(),
@@ -339,6 +793,7 @@ export class GrupoDetalle implements OnInit {
         card.id
       );
       await this.recargarCards();
+      await this.recargarLogs();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al eliminar la card');
     }

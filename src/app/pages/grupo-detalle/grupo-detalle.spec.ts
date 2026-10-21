@@ -1,29 +1,231 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+import type { Schema } from '../../../../amplify/data/resource';
 import { AuthService } from '../../services/auth';
 import { MateriaService } from '../../services/materia';
-import { GrupoDetalle } from './grupo-detalle';
+import {
+  calcularMetricasParticipacion,
+  GrupoDetalle,
+} from './grupo-detalle';
+
+type Card = Schema['Card']['type'];
+type Grupo = Schema['Grupo']['type'];
+type LogActividad = Schema['LogActividad']['type'];
+type EvaluacionPar = Schema['EvaluacionPar']['type'];
+
+function tarjeta(
+  id: string,
+  asignados: string[],
+  pesoEsfuerzo: 1 | 3 | 5 = 1,
+  fechaLimite: string | null = null,
+): Card {
+  return {
+    id,
+    grupoId: 'group-1',
+    titulo: id,
+    estado: 'hecho',
+    orden: 0,
+    asignados,
+    pesoEsfuerzo,
+    fechaLimite,
+    completadaEn: Math.floor(new Date(2025, 0, 2, 12).getTime() / 1000),
+  } as Card;
+}
+
+function log(usuarioId: string, accion: string, entidadId: string): LogActividad {
+  return {
+    grupoId: 'group-1',
+    usuarioId,
+    accion,
+    entidad: 'Card',
+    entidadId,
+    timestamp: Math.floor(new Date(2025, 0, 2, 12).getTime() / 1000),
+  } as LogActividad;
+}
+
+function evaluacion(
+  cardId: string,
+  evaluadorId: string,
+  evaluadoId: string,
+  score: number,
+): EvaluacionPar {
+  return {
+    id: `${cardId}-${evaluadorId}-${evaluadoId}`,
+    grupoId: 'group-1',
+    cardId,
+    hito: 'hecho',
+    evaluadorId,
+    evaluadoId,
+    coordinacion: score,
+    comunicacion: score,
+    responsabilidad: score,
+    timestamp: Math.floor(new Date(2025, 0, 2, 12).getTime() / 1000),
+  } as EvaluacionPar;
+}
+
+describe('calcularMetricasParticipacion', () => {
+  it('distributes effort across assignees and combines available metrics to 100%', () => {
+    const cards = [
+      tarjeta('shared', ['user-1', 'user-2'], 3, '2025-01-02'),
+      tarjeta('late', ['user-1'], 1, '2025-01-01'),
+    ];
+    const logs = [
+      log('user-1', 'completar_card', 'shared'),
+      log('user-1', 'completar_card', 'late'),
+      log('user-1', 'reabrir_card', 'late'),
+      log('user-3', 'revisar_card', 'shared'),
+    ];
+
+    const metrics = calcularMetricasParticipacion(
+      ['user-1', 'user-2', 'user-3'],
+      cards,
+      logs,
+      [],
+    );
+
+    expect(metrics.map((person) => person.esfuerzo)).toEqual([62.5, 37.5, 0]);
+    expect(metrics[0].puntualidad).toBeCloseTo(37.5);
+    expect(metrics[1].puntualidad).toBeCloseTo(62.5);
+    expect(metrics[1].calidad).toBeGreaterThan(metrics[0].calidad!);
+    expect(metrics[2].colaboracion).toBe(100);
+    expect(metrics.every((person) => person.evaluacionPares === null)).toBe(true);
+    expect(metrics.reduce((sum, person) => sum + person.participacion!, 0)).toBeCloseTo(100);
+  });
+
+  it('uses an even split when an available metric has only zero scores', () => {
+    const metrics = calcularMetricasParticipacion(
+      ['user-1', 'user-2'],
+      [tarjeta('late-1', ['user-1'], 1, '2025-01-01'), tarjeta('late-2', ['user-2'], 1, '2025-01-01')],
+      [log('user-1', 'completar_card', 'late-1'), log('user-2', 'completar_card', 'late-2')],
+      [],
+    );
+
+    expect(metrics.map((person) => person.puntualidad)).toEqual([50, 50]);
+  });
+
+  it('includes peer scores only after every group member has received a non-self evaluation', () => {
+    const cards = [tarjeta('shared', ['user-1', 'user-2'], 3)];
+    const logs = [log('user-1', 'completar_card', 'shared')];
+    const incomplete = [
+      evaluacion('shared', 'user-1', 'user-2', 3),
+      evaluacion('shared', 'user-2', 'user-1', 5),
+      evaluacion('shared', 'user-1', 'user-1', 1),
+    ];
+    const completed = [...incomplete, evaluacion('shared', 'user-2', 'user-3', 4)];
+
+    const beforeAllPeers = calcularMetricasParticipacion(
+      ['user-1', 'user-2', 'user-3'],
+      cards,
+      logs,
+      incomplete,
+    );
+    const afterAllPeers = calcularMetricasParticipacion(
+      ['user-1', 'user-2', 'user-3'],
+      cards,
+      logs,
+      completed,
+    );
+
+    expect(beforeAllPeers.every((person) => person.evaluacionPares === null)).toBe(true);
+    expect(afterAllPeers.map((person) => person.evaluacionesRecibidas)).toEqual([1, 1, 1]);
+    expect(afterAllPeers.reduce((sum, person) => sum + person.evaluacionPares!, 0)).toBeCloseTo(100);
+  });
+
+  it('ignores deleted cards even when their activity remains in the log', () => {
+    const metrics = calcularMetricasParticipacion(
+      ['user-1', 'user-2'],
+      [],
+      [log('user-1', 'completar_card', 'deleted-card')],
+      [],
+    );
+
+    expect(metrics.every((person) => person.participacion === null)).toBe(true);
+  });
+});
 
 describe('GrupoDetalle', () => {
   let component: GrupoDetalle;
   let fixture: ComponentFixture<GrupoDetalle>;
+  let cards: Card[];
+  let logs: LogActividad[];
+  let materiaService: {
+    obtenerGrupo: ReturnType<typeof vi.fn>;
+    listarCardsDeGrupo: ReturnType<typeof vi.fn>;
+    listarLogsDeGrupo: ReturnType<typeof vi.fn>;
+    listarEvaluacionesDeGrupo: ReturnType<typeof vi.fn>;
+    eliminarCard: ReturnType<typeof vi.fn>;
+    registrarLog: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
+    cards = [tarjeta('card-1', ['user-1'], 3)];
+    logs = [log('user-1', 'completar_card', 'card-1')];
+    materiaService = {
+      obtenerGrupo: vi.fn().mockResolvedValue({
+        id: 'group-1',
+        nombre: 'Grupo de prueba',
+        adminId: 'user-1',
+        integrantes: ['user-1', 'user-2'],
+      } as Grupo),
+      listarCardsDeGrupo: vi.fn().mockImplementation(async () => cards),
+      listarLogsDeGrupo: vi.fn().mockImplementation(async () => logs),
+      listarEvaluacionesDeGrupo: vi.fn().mockResolvedValue([]),
+      eliminarCard: vi.fn().mockImplementation(async (id: string) => {
+        cards = cards.filter((card) => card.id !== id);
+      }),
+      registrarLog: vi.fn().mockImplementation(
+        async (
+          grupoId: string,
+          usuarioId: string,
+          accion: string,
+          entidad: string,
+          entidadId: string,
+        ) => {
+          logs.push({
+            grupoId,
+            usuarioId,
+            accion,
+            entidad,
+            entidadId,
+            timestamp: 1,
+          } as LogActividad);
+        },
+      ),
+    };
+
     await TestBed.configureTestingModule({
       imports: [GrupoDetalle],
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: {} },
-        { provide: MateriaService, useValue: {} },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => 'group-1' } } },
+        },
+        { provide: AuthService, useValue: { getUserId: vi.fn().mockResolvedValue('user-1') } },
+        { provide: MateriaService, useValue: materiaService },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GrupoDetalle);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('removes a deleted card contribution after reloading the board', async () => {
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const card = component.todasLasCards()[0];
+
+    expect(component.metricasParticipacion()[0].esfuerzo).toBe(100);
+
+    await component.eliminarCard(card);
+
+    expect(materiaService.eliminarCard).toHaveBeenCalledWith(card.id);
+    expect(materiaService.listarCardsDeGrupo).toHaveBeenCalledTimes(2);
+    expect(component.metricasParticipacion().every((person) => person.participacion === null)).toBe(true);
   });
 });
