@@ -1,8 +1,3 @@
-Acá tenés un `README.md` totalmente reescrito y actualizado, basado **exclusivamente en lo que encontré en el código real** del repositorio. 
-
-Está redactado de forma profesional, separando claramente lo que ya funciona de lo que es un placeholder (maqueta) o está pendiente. Podés copiar y pegar esto directamente en tu GitHub.
-
-***
 
 # GrupLab 
 
