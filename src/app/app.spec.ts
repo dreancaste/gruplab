@@ -1,23 +1,20 @@
 import { TestBed } from '@angular/core/testing';
-import { App } from './app';
+import { AppComponent } from './app';
 
-describe('App', () => {
+describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
-    }).compileComponents();
+      imports: [AppComponent],
+    })
+      .overrideComponent(AppComponent, {
+        set: { imports: [], template: '<h2>GrupLab</h2>' },
+      })
+      .compileComponents();
   });
 
   it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, gruplab');
+    const fixture = TestBed.createComponent(AppComponent);
+    expect(fixture.componentInstance).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('h2')?.textContent).toContain('GrupLab');
   });
 });

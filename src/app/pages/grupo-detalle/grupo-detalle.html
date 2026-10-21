@@ -37,14 +37,53 @@
       </div>
     </header>
 
+    <section class="metricas-aporte" aria-labelledby="titulo-metricas">
+      <div class="metricas-cabecera">
+        <div>
+          <h2 id="titulo-metricas">Aporte del equipo</h2>
+          <p>Puntos por hitos de tareas. Cada persona suma una vez por tarea y etapa.</p>
+        </div>
+        <span class="total-puntos">{{ totalPuntosAporte() }} puntos</span>
+      </div>
+      <p class="sin-aportes" *ngIf="totalPuntosAporte() === 0">
+        Todavía no hay hitos registrados. El aporte se cuenta desde ahora.
+      </p>
+      <div class="aporte-lista" *ngIf="totalPuntosAporte() > 0">
+        <article class="aporte-integrante" *ngFor="let aporte of aportesIntegrantes()">
+          <div class="aporte-nombre">
+            <strong>{{ aporte.usuarioId === userId() ? 'Vos' : aporte.usuarioId }}</strong>
+            <span>{{ aporte.puntos }} puntos · {{ totalPuntosAporte() ? (aporte.puntos / totalPuntosAporte() | percent:'1.0-0') : '0%' }}</span>
+          </div>
+          <div
+            class="aporte-barra"
+            role="progressbar"
+            [attr.aria-valuenow]="aporte.puntos"
+            [attr.aria-valuemax]="totalPuntosAporte()"
+            aria-label="Porcentaje de puntos de aporte"
+          >
+            <span [style.width.%]="aporte.puntos / totalPuntosAporte() * 100"></span>
+          </div>
+          <p class="aporte-detalle">
+            Backlog {{ aporte.tareasCreadas }} × 1
+            · En progreso {{ aporte.tareasEnProgreso }} × 2
+            · Revisión {{ aporte.tareasEnRevision }} × 3
+          </p>
+        </article>
+      </div>
+      <p class="metricas-nota">
+        Es una referencia de actividad registrada, no una calificación ni una medida de esfuerzo.
+      </p>
+    </section>
+
     <!-- KANBAN -->
-    <div class="kanban">
+    <div class="kanban" cdkDropListGroup>
       <!-- BACKLOG -->
       <div class="columna">
         <h3 class="col-titulo">📋 Backlog ({{ backlog().length }})</h3>
         <div
           class="col-contenido"
           cdkDropList
+          [cdkDropListConnectedTo]="listasConectadas"
           [cdkDropListData]="backlog()"
           (cdkDropListDropped)="drop($event, 'backlog')"
           id="backlog"
@@ -85,6 +124,7 @@
         <div
           class="col-contenido"
           cdkDropList
+          [cdkDropListConnectedTo]="listasConectadas"
           [cdkDropListData]="progreso()"
           (cdkDropListDropped)="drop($event, 'progreso')"
           id="progreso"
@@ -125,6 +165,7 @@
         <div
           class="col-contenido"
           cdkDropList
+          [cdkDropListConnectedTo]="listasConectadas"
           [cdkDropListData]="revision()"
           (cdkDropListDropped)="drop($event, 'revision')"
           id="revision"
@@ -165,6 +206,7 @@
         <div
           class="col-contenido"
           cdkDropList
+          [cdkDropListConnectedTo]="listasConectadas"
           [cdkDropListData]="hecho()"
           (cdkDropListDropped)="drop($event, 'hecho')"
           id="hecho"
@@ -231,15 +273,9 @@
       <textarea [(ngModel)]="cardDescripcion"></textarea>
     </label>
 
-    <label>
-      Estado
-      <select [(ngModel)]="cardEstado">
-        <option value="backlog">Backlog</option>
-        <option value="progreso">En progreso</option>
-        <option value="revision">Revisión</option>
-        <option value="hecho">Hecho</option>
-      </select>
-    </label>
+    <p class="ayuda" *ngIf="!modoEdicionCard()">
+      La tarea se crea en Backlog. Arrastrala entre columnas para avanzar.
+    </p>
 
     <div class="modal-acciones">
       <button (click)="cerrarModalCard()">Cancelar</button>

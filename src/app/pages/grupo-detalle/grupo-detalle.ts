@@ -14,7 +14,14 @@ import type { Schema } from '../../../../amplify/data/resource';
 
 type Card = Schema['Card']['type'];
 type Grupo = Schema['Grupo']['type'];
+type LogActividad = Schema['LogActividad']['type'];
 type Estado = 'backlog' | 'progreso' | 'revision' | 'hecho';
+
+const PUNTAJE_POR_ACCION: Record<string, number> = {
+  crear_backlog: 1,
+  mover_a_progreso: 2,
+  mover_a_revision: 3,
+};
 
 @Component({
   selector: 'app-grupo-detalle',
@@ -24,6 +31,8 @@ type Estado = 'backlog' | 'progreso' | 'revision' | 'hecho';
   styleUrl: './grupo-detalle.scss',
 })
 export class GrupoDetalle implements OnInit {
+  readonly listasConectadas = ['backlog', 'progreso', 'revision', 'hecho'];
+
   grupo = signal<Grupo | null>(null);
   userId = signal<string | null>(null);
   esDocente = signal(false);
@@ -31,6 +40,30 @@ export class GrupoDetalle implements OnInit {
   error = signal<string | null>(null);
 
   todasLasCards = signal<Card[]>([]);
+  logs = signal<LogActividad[]>([]);
+
+  aportesIntegrantes = computed(() => {
+    const integrantes = this.grupo()?.integrantes ?? [];
+    const logs = this.logs();
+    return integrantes.map((usuarioId) => {
+      const actividades = logs.filter((log) => log.usuarioId === usuarioId);
+      const tareasCreadas = actividades.filter((log) => log.accion === 'crear_backlog').length;
+      const tareasEnProgreso = actividades.filter((log) => log.accion === 'mover_a_progreso').length;
+      const tareasEnRevision = actividades.filter((log) => log.accion === 'mover_a_revision').length;
+      return {
+        usuarioId,
+        tareasCreadas,
+        tareasEnProgreso,
+        tareasEnRevision,
+        puntos: tareasCreadas * PUNTAJE_POR_ACCION['crear_backlog'] +
+          tareasEnProgreso * PUNTAJE_POR_ACCION['mover_a_progreso'] +
+          tareasEnRevision * PUNTAJE_POR_ACCION['mover_a_revision'],
+      };
+    });
+  });
+  totalPuntosAporte = computed(() =>
+    this.aportesIntegrantes().reduce((total, integrante) => total + integrante.puntos, 0),
+  );
 
   backlog = computed(() =>
     this.ordenar(this.todasLasCards().filter((c) => c.estado === 'backlog'))
@@ -63,7 +96,6 @@ export class GrupoDetalle implements OnInit {
   cardEditandoId = signal<string | null>(null);
   cardTitulo = '';
   cardDescripcion = '';
-  cardEstado: Estado = 'backlog';
 
   // Modal puntuar (profesor)
   mostrarModalPuntuar = signal(false);
@@ -114,6 +146,7 @@ export class GrupoDetalle implements OnInit {
       }
 
       await this.recargarCards();
+      await this.recargarLogs();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al cargar el grupo');
     } finally {
@@ -132,6 +165,12 @@ export class GrupoDetalle implements OnInit {
     this.todasLasCards.set(cards);
   }
 
+  private async recargarLogs() {
+    const g = this.grupo();
+    if (!g) return;
+    this.logs.set(await this.materiaService.listarLogsDeGrupo(g.id));
+  }
+
   volver() {
     const g = this.grupo();
     if (g?.materiaId) {
@@ -145,6 +184,15 @@ export class GrupoDetalle implements OnInit {
 
   async drop(event: CdkDragDrop<Card[]>, nuevoEstado: Estado) {
     const card = event.previousContainer.data[event.previousIndex];
+    if (!card) return;
+    if (
+      event.previousContainer === event.container &&
+      event.previousIndex === event.currentIndex
+    ) {
+      return;
+    }
+
+    const estadoAnterior = card.estado;
 
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -158,19 +206,57 @@ export class GrupoDetalle implements OnInit {
     }
 
     try {
-      await this.materiaService.actualizarCard(card.id, { estado: nuevoEstado });
-      await this.materiaService.registrarLog(
-        card.grupoId,
-        this.userId()!,
-        'mover_card',
-        'Card',
-        card.id
+      const listasActualizadas = event.previousContainer === event.container
+        ? [{ cards: event.container.data, estado: nuevoEstado }]
+        : [
+            { cards: event.previousContainer.data, estado: estadoAnterior as Estado },
+            { cards: event.container.data, estado: nuevoEstado },
+          ];
+      const actualizaciones = new Map<string, { estado: Estado; orden: number }>();
+      for (const lista of listasActualizadas) {
+        lista.cards.forEach((tarjeta, orden) => {
+          actualizaciones.set(tarjeta.id, { estado: lista.estado, orden });
+        });
+      }
+
+      const tarjetasModificadas = this.todasLasCards().filter((tarjeta) => {
+        const cambio = actualizaciones.get(tarjeta.id);
+        return cambio && (tarjeta.estado !== cambio.estado || tarjeta.orden !== cambio.orden);
+      });
+      this.todasLasCards.update((tarjetas) =>
+        tarjetas.map((tarjeta) => {
+          const cambio = actualizaciones.get(tarjeta.id);
+          return cambio ? { ...tarjeta, ...cambio } : tarjeta;
+        }),
       );
+      await Promise.all(
+        tarjetasModificadas.map((tarjeta) =>
+          this.materiaService.actualizarCard(tarjeta.id, actualizaciones.get(tarjeta.id)!),
+        ),
+      );
+
+      if (estadoAnterior !== nuevoEstado) {
+        const accion = this.accionParaTransicion(nuevoEstado);
+        if (accion && !this.logs().some(
+          (log) => log.usuarioId === this.userId() &&
+            log.entidadId === card.id &&
+            log.accion === accion,
+        )) {
+          await this.materiaService.registrarLog(card.grupoId, this.userId()!, accion, 'Card', card.id);
+        }
+      }
       await this.recargarCards();
+      await this.recargarLogs();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al mover la card');
       await this.recargarCards();
     }
+  }
+
+  private accionParaTransicion(estado: Estado): string | null {
+    if (estado === 'progreso') return 'mover_a_progreso';
+    if (estado === 'revision') return 'mover_a_revision';
+    return null;
   }
 
   // ==== Crear / editar card ====
@@ -180,7 +266,6 @@ export class GrupoDetalle implements OnInit {
     this.cardEditandoId.set(null);
     this.cardTitulo = '';
     this.cardDescripcion = '';
-    this.cardEstado = 'backlog';
     this.mostrarModalCard.set(true);
   }
 
@@ -189,7 +274,6 @@ export class GrupoDetalle implements OnInit {
     this.cardEditandoId.set(card.id);
     this.cardTitulo = card.titulo;
     this.cardDescripcion = card.descripcion ?? '';
-    this.cardEstado = (card.estado as Estado) ?? 'backlog';
     this.mostrarModalCard.set(true);
   }
 
@@ -209,7 +293,6 @@ export class GrupoDetalle implements OnInit {
         await this.materiaService.actualizarCard(this.cardEditandoId()!, {
           titulo: this.cardTitulo.trim(),
           descripcion: this.cardDescripcion.trim(),
-          estado: this.cardEstado,
         });
         await this.materiaService.registrarLog(
           g.id,
@@ -219,11 +302,7 @@ export class GrupoDetalle implements OnInit {
           this.cardEditandoId()!
         );
       } else {
-        const nueva = await this.materiaService.crearCard(
-          g.id,
-          this.cardTitulo.trim(),
-          this.cardEstado
-        );
+        const nueva = await this.materiaService.crearCard(g.id, this.cardTitulo.trim());
         if (this.cardDescripcion.trim()) {
           await this.materiaService.actualizarCard(nueva.id, {
             descripcion: this.cardDescripcion.trim(),
@@ -232,12 +311,13 @@ export class GrupoDetalle implements OnInit {
         await this.materiaService.registrarLog(
           g.id,
           this.userId()!,
-          'crear_card',
+          'crear_backlog',
           'Card',
           nueva.id
         );
       }
       await this.recargarCards();
+      await this.recargarLogs();
       this.cerrarModalCard();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al guardar la card');

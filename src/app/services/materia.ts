@@ -206,11 +206,14 @@ export class MateriaService {
     titulo: string,
     estado: 'backlog' | 'progreso' | 'revision' | 'hecho' = 'backlog',
   ) {
+    const cards = await this.listarCardsDeGrupo(grupoId);
+    const orden = cards.reduce((mayor, card) => Math.max(mayor, card.orden ?? -1), -1) + 1;
+
     const { data, errors } = await client.models.Card.create({
       grupoId,
       titulo,
       estado,
-      orden: Date.now(),
+      orden,
       adjuntos: [],
     });
     if (errors?.length) throw new Error(errors[0].message);
@@ -250,14 +253,15 @@ export class MateriaService {
     entidad: string,
     entidadId: string,
   ) {
-    await client.models.LogActividad.create({
+    const { errors } = await client.models.LogActividad.create({
       grupoId,
       usuarioId,
       accion,
       entidad,
       entidadId,
-      timestamp: Date.now(),
+      timestamp: Math.floor(Date.now() / 1000),
     });
+    if (errors?.length) throw new Error(errors[0].message);
   }
 
   async listarLogsDeGrupo(grupoId: string) {
