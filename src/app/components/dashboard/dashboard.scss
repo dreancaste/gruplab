@@ -1,0 +1,164 @@
+.dashboard-docente {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dashboard-header {
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.25rem;
+    color: #111827;
+  }
+
+  .subtitulo {
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &.kpi-alerta {
+    background: #fef2f2;
+    border-color: #fecaca;
+
+    .kpi-value {
+      color: #dc2626;
+    }
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .kpi-value {
+    font-size: 1.4rem;
+    color: #111827;
+  }
+
+  .kpi-foot {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+}
+
+.comparativa-grupos {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+
+  h3 {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+    color: #374151;
+  }
+}
+
+.grupo-metric-row {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.grupo-metric-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.grupo-metric-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+
+  .meta-integrantes {
+    color: #6b7280;
+    font-size: 0.8rem;
+  }
+
+  .badge-vencida {
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+  }
+}
+
+.grupo-metric-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+
+  .nota-pill {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .pct-pill {
+    font-weight: 700;
+    color: #2563eb;
+  }
+}
+
+.barra-progreso-bg {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.barra-progreso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #16a34a);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.desglose-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.76rem;
+  color: #6b7280;
+
+  strong {
+    color: #374151;
+  }
+}

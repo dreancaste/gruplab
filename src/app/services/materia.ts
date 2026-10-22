@@ -549,4 +549,88 @@ export class MateriaService {
       await this.registrarLog(grupoId, resueltoPorId, 'rechazar_acceso', 'SolicitudGrupo', solicitanteId);
     }
   }
+
+  // ==== Gestión de roles en Materia (Promover alumno a profesor) ====
+
+  async promoverAlumnoAProfesor(materiaId: string, alumnoId: string): Promise<Materia> {
+    const materia = await this.obtenerMateria(materiaId);
+    if (!materia) throw new Error('Materia no encontrada');
+
+    const alumnos = (materia.alumnos ?? []).filter((id): id is string => !!id && id !== alumnoId);
+    const profesoresActuales = (materia.profesores ?? []).filter((id): id is string => !!id);
+    const profesores = profesoresActuales.includes(alumnoId)
+      ? profesoresActuales
+      : [...profesoresActuales, alumnoId];
+
+    const { data, errors } = await client.models.Materia.update({
+      id: materiaId,
+      alumnos,
+      profesores,
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data!;
+  }
+
+  async degradarProfesorAAlumno(materiaId: string, profesorId: string): Promise<Materia> {
+    const materia = await this.obtenerMateria(materiaId);
+    if (!materia) throw new Error('Materia no encontrada');
+
+    const profesores = (materia.profesores ?? []).filter((id): id is string => !!id && id !== profesorId);
+    const alumnosActuales = (materia.alumnos ?? []).filter((id): id is string => !!id);
+    const alumnos = alumnosActuales.includes(profesorId)
+      ? alumnosActuales
+      : [...alumnosActuales, profesorId];
+
+    const { data, errors } = await client.models.Materia.update({
+      id: materiaId,
+      alumnos,
+      profesores,
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data!;
+  }
+
+  // ==== Perfiles de usuario (Email / Nombre legible) ====
+
+  private perfilesCache: Record<string, string> = {};
+
+  async sincronizarPerfilUsuario(userId: string, email: string | null): Promise<void> {
+    if (!userId || !email) return;
+    this.perfilesCache[userId] = email;
+    try {
+      const { data } = await client.models.LogActividad.list({
+        filter: {
+          grupoId: { eq: 'PERFILES_GLOBAL' },
+          usuarioId: { eq: userId },
+        },
+      });
+      const yaExiste = (data ?? []).some((l) => l.entidadId === email);
+      if (!yaExiste) {
+        await client.models.LogActividad.create({
+          grupoId: 'PERFILES_GLOBAL',
+          usuarioId: userId,
+          accion: 'registro_perfil',
+          entidad: 'Usuario',
+          entidadId: email,
+          timestamp: Math.floor(Date.now() / 1000),
+        });
+      }
+    } catch {
+      // No bloquear si falla la sincronización de perfil
+    }
+  }
+
+  async obtenerMapaUsuarios(): Promise<Record<string, string>> {
+    try {
+      const { data } = await client.models.LogActividad.list({
+        filter: { grupoId: { eq: 'PERFILES_GLOBAL' } },
+      });
+      for (const log of data ?? []) {
+        if (log.usuarioId && log.entidadId) {
+          this.perfilesCache[log.usuarioId] = log.entidadId;
+        }
+      }
+    } catch {}
+    return { ...this.perfilesCache };
+  }
 }

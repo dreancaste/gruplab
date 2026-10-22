@@ -374,6 +374,10 @@ export class GrupoDetalle implements OnInit {
   cardDetalle = signal<Card | null>(null);
   cargandoUrlsDetalle = signal(false);
 
+  // Perfiles de usuario & Historial de actividad
+  usuariosMap = signal<Record<string, string>>({});
+  mostrarModalLogs = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -389,9 +393,17 @@ export class GrupoDetalle implements OnInit {
       const userId = await this.auth.getUserId();
       this.userId.set(userId);
 
+      this.auth.getEmail?.().then((email) => {
+        if (email) this.materiaService.sincronizarPerfilUsuario?.(userId, email);
+      }).catch(() => {});
+
       const grupo = await this.materiaService.obtenerGrupo(grupoId);
       if (!grupo) throw new Error('Grupo no encontrado');
       this.grupo.set(grupo);
+
+      if (this.materiaService.obtenerMapaUsuarios) {
+        this.usuariosMap.set(await this.materiaService.obtenerMapaUsuarios());
+      }
 
       // Determinar rol y validar acceso
       if (grupo.materiaId) {
@@ -1262,5 +1274,78 @@ export class GrupoDetalle implements OnInit {
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al procesar la solicitud');
     }
+  }
+
+  // ==== Perfiles legibles, vencimientos e historial ====
+
+  nombreUsuario(id: string | null | undefined): string {
+    if (!id) return '';
+    return this.usuariosMap()[id] ?? id;
+  }
+
+  nombresAsignados(card: Card): string {
+    const lista = (card.asignados ?? []).filter((a): a is string => !!a);
+    if (lista.length === 0) return 'Sin asignar';
+    return lista.map((id) => this.nombreUsuario(id)).join(', ');
+  }
+
+  esVencida(card: Card): boolean {
+    if (!card.fechaLimite || card.estado === 'hecho') return false;
+    const hoy = new Date().toISOString().slice(0, 10);
+    return card.fechaLimite < hoy;
+  }
+
+  esProximaAVencer(card: Card): boolean {
+    if (!card.fechaLimite || card.estado === 'hecho' || this.esVencida(card)) return false;
+    const hoy = new Date();
+    const limite = new Date(card.fechaLimite + 'T23:59:59');
+    const diffDias = (limite.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDias >= 0 && diffDias <= 2;
+  }
+
+  abrirHistorial() {
+    this.mostrarModalLogs.set(true);
+  }
+
+  cerrarHistorial() {
+    this.mostrarModalLogs.set(false);
+  }
+
+  logsOrdenados = computed(() => {
+    return [...this.logs()]
+      .filter((l) => l.accion !== 'registro_perfil')
+      .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
+  });
+
+  describirLog(log: LogActividad): string {
+    const mapa: Record<string, string> = {
+      crear_card: 'creó una tarea',
+      editar_card: 'editó una tarea',
+      mover_card: 'cambió de columna una tarea',
+      revisar_card: 'revisó una tarea',
+      eliminar_card: 'eliminó una tarea',
+      adjuntar_archivo: 'adjuntó un archivo',
+      eliminar_adjunto: 'eliminó un adjunto',
+      puntuar_card: 'calificó una tarea',
+      evaluar_par: 'completó una evaluación de pares',
+      editar_nombre: 'cambió el nombre del grupo',
+      editar_integrantes: 'actualizó los integrantes del grupo',
+      salir_grupo: 'salió del grupo',
+      solicitar_acceso: 'solicitó unirse al grupo',
+      aprobar_acceso: 'aceptó una solicitud de ingreso',
+      rechazar_acceso: 'rechazó una solicitud de ingreso',
+    };
+    return mapa[log.accion] ?? log.accion;
+  }
+
+  fechaLog(log: LogActividad): string {
+    if (!log.timestamp) return '';
+    const ms = log.timestamp < 1e12 ? log.timestamp * 1000 : log.timestamp;
+    return new Date(ms).toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 }

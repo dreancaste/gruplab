@@ -50,6 +50,9 @@ export class MisAulas implements OnInit {
     try {
       const uid = await this.auth.getUserId();
       this.userId.set(uid);
+      this.auth.getEmail?.().then((email) => {
+        if (email) this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+      }).catch(() => {});
       const materias = await this.materiaService.listarMisMaterias(uid);
       this.misMaterias.set(materias);
       const tableros = await this.materiaService.listarMisTableros(uid);

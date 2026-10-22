@@ -26,6 +26,10 @@
           + Nueva tarea
         </button>
 
+        <button class="btn-secundario" (click)="abrirHistorial()">
+          📜 Historial
+        </button>
+
         <ng-container *ngIf="esAdminDelGrupo()">
           <button class="btn-secundario" (click)="abrirGestionarIntegrantes()">
             👥 Integrantes
@@ -45,7 +49,7 @@
       <h3>🔔 Solicitudes para unirse al grupo ({{ solicitudesPendientes().length }})</h3>
       <div class="solicitudes-lista">
         <div class="solicitud-item" *ngFor="let solId of solicitudesPendientes()">
-          <span class="solicitante-id">{{ solId }}</span>
+          <span class="solicitante-id">{{ nombreUsuario(solId) }}</span>
           <div class="solicitud-acciones">
             <button class="btn-aceptar" (click)="responderSolicitud(solId, true)">
               ✓ Aceptar
@@ -69,7 +73,7 @@
       <div class="aporte-lista" *ngIf="formulaParticipacion()">
         <article class="aporte-integrante" *ngFor="let metricas of metricasParticipacion()">
           <div class="aporte-nombre">
-            <strong>{{ metricas.usuarioId === userId() ? 'Vos' : metricas.usuarioId }}</strong>
+            <strong>{{ metricas.usuarioId === userId() ? 'Vos (' + nombreUsuario(metricas.usuarioId) + ')' : nombreUsuario(metricas.usuarioId) }}</strong>
             <span class="aporte-pct">
               {{ metricas.participacion === null ? '—' : (metricas.participacion | number:'1.0-1') + '%' }}
             </span>
@@ -108,9 +112,11 @@
               </p>
               <p class="card-detalles">
                 Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -163,9 +169,11 @@
               </p>
               <p class="card-detalles">
                 Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -218,11 +226,13 @@
               </p>
               <p class="card-detalles">
                 Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
               <p class="card-detalles" *ngIf="card.revisadaPor">
-                Revisada por {{ card.revisadaPor }}
+                Revisada por {{ nombreUsuario(card.revisadaPor) }}
               </p>
               <p class="card-detalles" *ngIf="!card.revisadaPor">
                 Pendiente de revisión independiente
@@ -287,9 +297,11 @@
               </p>
               <p class="card-detalles">
                 Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ card.asignados?.join(', ') || 'Sin asignar' }}
+                · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
+              <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -370,7 +382,7 @@
       </div>
       <div>
         <span class="meta-label">Asignados</span>
-        <span>{{ cardDetalle()!.asignados?.join(', ') || 'Sin asignar' }}</span>
+        <span>{{ nombresAsignados(cardDetalle()!) }}</span>
       </div>
       <div *ngIf="cardDetalle()!.fechaLimite">
         <span class="meta-label">Fecha límite</span>
@@ -503,7 +515,7 @@
           [checked]="asignadosSeleccionados().includes(integranteId)"
           (change)="toggleAsignado(integranteId)"
         />
-        {{ integranteId === userId() ? 'Vos' : integranteId }}
+        {{ integranteId === userId() ? 'Vos (' + nombreUsuario(integranteId) + ')' : nombreUsuario(integranteId) }}
       </label>
     </fieldset>
 
@@ -538,7 +550,7 @@
           *ngFor="let integranteId of evaluadosPendientes(tarjetaAEvaluar()!)"
           [value]="integranteId"
         >
-          {{ integranteId }}
+          {{ nombreUsuario(integranteId) }}
         </option>
       </select>
     </label>
@@ -654,7 +666,7 @@
             [disabled]="bloqueadoParaQuitar(alumnoId)"
             (change)="toggleIntegrante(alumnoId)"
           />
-          <span class="alumno-id">{{ alumnoId }}</span>
+          <span class="alumno-id">{{ nombreUsuario(alumnoId) }}</span>
         </label>
       </div>
 
@@ -719,6 +731,36 @@
       <button class="btn-peligro" (click)="eliminarGrupoCompleto()">
         Eliminar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTORIAL DE ACTIVIDAD -->
+<div
+  class="modal-backdrop"
+  *ngIf="mostrarModalLogs()"
+  (click)="cerrarHistorial()"
+>
+  <div class="modal modal-historial" (click)="$event.stopPropagation()">
+    <button class="modal-cerrar" (click)="cerrarHistorial()">✕</button>
+    <h3>📜 Historial de actividad del grupo</h3>
+
+    <p *ngIf="logsOrdenados().length === 0" class="ayuda">
+      Todavía no hay actividad registrada en este grupo.
+    </p>
+
+    <div class="historial-lista" *ngIf="logsOrdenados().length > 0">
+      <div class="historial-item" *ngFor="let log of logsOrdenados()">
+        <div class="historial-texto">
+          <strong>{{ log.usuarioId === userId() ? 'Vos' : nombreUsuario(log.usuarioId) }}</strong>
+          {{ describirLog(log) }}
+        </div>
+        <span class="historial-fecha">{{ fechaLog(log) }}</span>
+      </div>
+    </div>
+
+    <div class="modal-acciones">
+      <button class="btn-primario" (click)="cerrarHistorial()">Cerrar</button>
     </div>
   </div>
 </div>

@@ -4,21 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MateriaService } from '../../services/materia';
 import { AuthService } from '../../services/auth';
+import { DashboardComponent } from '../../components/dashboard/dashboard';
 import type { Schema } from '../../../../amplify/data/resource';
 
 type Materia = Schema['Materia']['type'];
 type Grupo = Schema['Grupo']['type'];
+type Card = Schema['Card']['type'];
 
 @Component({
   selector: 'app-aula-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DashboardComponent],
   templateUrl: './aula-detalle.html',
   styleUrl: './aula-detalle.scss',
 })
 export class AulaDetalle implements OnInit {
   materia = signal<Materia | null>(null);
   grupos = signal<Grupo[]>([]);
+  cardsPorGrupo = signal<Record<string, Card[]>>({});
+  usuariosMap = signal<Record<string, string>>({});
   miGrupo = signal<Grupo | null>(null);
   userId = signal<string | null>(null);
   rol = signal<'admin' | 'profesor' | 'alumno' | null>(null);
@@ -35,6 +39,9 @@ export class AulaDetalle implements OnInit {
   grupoEditandoId = signal<string | null>(null);
   nombreGrupo = '';
   integrantesSeleccionados = signal<string[]>([]);
+
+  // Modal participantes y roles (promover alumnos a profesor)
+  mostrarModalParticipantes = signal(false);
 
   // Modal confirmar eliminar
   mostrarConfirmarEliminar = signal(false);
@@ -60,6 +67,10 @@ export class AulaDetalle implements OnInit {
       const uid = await this.auth.getUserId();
       this.userId.set(uid);
 
+      this.auth.getEmail?.().then((email) => {
+        if (email) this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+      }).catch(() => {});
+
       const materia = await this.materiaService.obtenerMateria(id);
       if (!materia) throw new Error('Aula no encontrada');
       this.materia.set(materia);
@@ -67,6 +78,10 @@ export class AulaDetalle implements OnInit {
       const rol = this.materiaService.obtenerRol(materia, uid);
       this.rol.set(rol);
       if (!rol) throw new Error('No tenés acceso a esta aula');
+
+      if (this.materiaService.obtenerMapaUsuarios) {
+        this.usuariosMap.set(await this.materiaService.obtenerMapaUsuarios());
+      }
 
       await this.recargarGrupos();
     } catch (e: any) {
@@ -89,24 +104,44 @@ export class AulaDetalle implements OnInit {
       this.miGrupo.set(propio);
     }
 
-    // Cargar solicitudes pendientes de cada grupo
-    const mapa: Record<string, string[]> = {};
+    const mapaSolicitudes: Record<string, string[]> = {};
+    const mapaCards: Record<string, Card[]> = {};
+
     await Promise.all(
       grupos.map(async (g) => {
         try {
-          mapa[g.id] = await this.materiaService.listarSolicitudesPendientesDeGrupo(
-            g.id,
-            g.integrantes ?? [],
-          );
+          if (this.materiaService.listarSolicitudesPendientesDeGrupo) {
+            mapaSolicitudes[g.id] = await this.materiaService.listarSolicitudesPendientesDeGrupo(
+              g.id,
+              g.integrantes ?? [],
+            );
+          } else {
+            mapaSolicitudes[g.id] = [];
+          }
         } catch {
-          mapa[g.id] = [];
+          mapaSolicitudes[g.id] = [];
+        }
+
+        if (this.esDocente && this.materiaService.listarCardsDeGrupo) {
+          try {
+            mapaCards[g.id] = await this.materiaService.listarCardsDeGrupo(g.id);
+          } catch {
+            mapaCards[g.id] = [];
+          }
         }
       }),
     );
-    this.solicitudesPorGrupo.set(mapa);
+
+    this.solicitudesPorGrupo.set(mapaSolicitudes);
+    this.cardsPorGrupo.set(mapaCards);
   }
 
   // ==== Helpers ====
+
+  nombreUsuario(id: string | null | undefined): string {
+    if (!id) return '';
+    return this.usuariosMap()[id] ?? id;
+  }
 
   get esDocente(): boolean {
     const r = this.rol();
@@ -115,6 +150,14 @@ export class AulaDetalle implements OnInit {
 
   get alumnosDisponibles(): string[] {
     return (this.materia()?.alumnos ?? []).filter((id): id is string => !!id);
+  }
+
+  get profesoresAula(): string[] {
+    return (this.materia()?.profesores ?? []).filter((id): id is string => !!id);
+  }
+
+  get adminsAula(): string[] {
+    return (this.materia()?.admins ?? []).filter((id): id is string => !!id);
   }
 
   get esAdmin(): boolean {
@@ -182,6 +225,39 @@ export class AulaDetalle implements OnInit {
       await this.recargarGrupos();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al procesar la solicitud');
+    }
+  }
+
+  // ==== Gestión de participantes / Promover alumnos ====
+
+  abrirParticipantes() {
+    this.mostrarModalParticipantes.set(true);
+    this.error.set(null);
+  }
+
+  cerrarParticipantes() {
+    this.mostrarModalParticipantes.set(false);
+  }
+
+  async promoverAProfesor(alumnoId: string) {
+    const m = this.materia();
+    if (!m) return;
+    try {
+      const actualizada = await this.materiaService.promoverAlumnoAProfesor(m.id, alumnoId);
+      this.materia.set(actualizada);
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo promover al alumno');
+    }
+  }
+
+  async degradarAAlumno(profesorId: string) {
+    const m = this.materia();
+    if (!m) return;
+    try {
+      const actualizada = await this.materiaService.degradarProfesorAAlumno(m.id, profesorId);
+      this.materia.set(actualizada);
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo cambiar el rol');
     }
   }
 

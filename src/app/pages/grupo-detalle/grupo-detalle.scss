@@ -719,3 +719,62 @@ button.btn-primario {
     &:hover { background: #fecaca; }
   }
 }
+
+.alerta-vencimiento {
+  display: inline-block;
+  margin: 0.25rem 0 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  &.vencida {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  &.proxima {
+    background: #fef3c7;
+    color: #92400e;
+  }
+}
+
+.modal-historial {
+  position: relative;
+  max-width: 560px;
+  width: 92%;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #f9fafb;
+}
+
+.historial-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 6px;
+  font-size: 0.85rem;
+
+  .historial-texto {
+    color: #374151;
+  }
+
+  .historial-fecha {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+}

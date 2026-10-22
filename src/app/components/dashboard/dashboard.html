@@ -1,1 +1,70 @@
-<p>dashboard works!</p>
+<section class="dashboard-docente">
+  <div class="dashboard-header">
+    <h2>📊 Dashboard del Aula</h2>
+    <span class="subtitulo">Resumen consolidado de avance y desempeño de los grupos</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Grupos activos</span>
+      <strong class="kpi-value">{{ grupos.length }}</strong>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Alumnos inscriptos</span>
+      <strong class="kpi-value">{{ totalAlumnos }}</strong>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Avance global de tareas</span>
+      <strong class="kpi-value">{{ porcentajeGlobal }}%</strong>
+      <span class="kpi-foot">{{ tareasCompletadas }} de {{ totalTareas }} completadas</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Promedio calificaciones</span>
+      <strong class="kpi-value">
+        {{ promedioGeneralNota !== null ? promedioGeneralNota + ' / 10' : '—' }}
+      </strong>
+    </div>
+    <div class="kpi-card" [class.kpi-alerta]="tareasVencidasGlobal > 0">
+      <span class="kpi-label">Tareas vencidas</span>
+      <strong class="kpi-value">{{ tareasVencidasGlobal }}</strong>
+    </div>
+  </div>
+
+  <!-- Comparativa por grupo -->
+  <div class="comparativa-grupos" *ngIf="resumenPorGrupo.length > 0">
+    <h3>Avance por grupo</h3>
+    <div class="grupo-metric-row" *ngFor="let item of resumenPorGrupo">
+      <div class="grupo-metric-info">
+        <div class="grupo-metric-title">
+          <strong>{{ item.grupo.nombre }}</strong>
+          <span class="meta-integrantes">
+            ({{ item.grupo.integrantes?.length ?? 0 }} integrante{{
+              (item.grupo.integrantes?.length ?? 0) === 1 ? '' : 's'
+            }})
+          </span>
+          <span class="badge-vencida" *ngIf="item.vencidas > 0">
+            ⚠️ {{ item.vencidas }} vencida{{ item.vencidas === 1 ? '' : 's' }}
+          </span>
+        </div>
+        <div class="grupo-metric-stats">
+          <span *ngIf="item.promedioNota !== null" class="nota-pill">
+            ⭐ {{ item.promedioNota }}/10
+          </span>
+          <span class="pct-pill">{{ item.porcentajeAvance }}% completado</span>
+        </div>
+      </div>
+
+      <div class="barra-progreso-bg">
+        <div class="barra-progreso-fill" [style.width.%]="item.porcentajeAvance"></div>
+      </div>
+
+      <div class="desglose-estados">
+        <span>Backlog: <strong>{{ item.backlog }}</strong></span>
+        <span>En progreso: <strong>{{ item.progreso }}</strong></span>
+        <span>Revisión: <strong>{{ item.revision }}</strong></span>
+        <span>Hecho: <strong>{{ item.hecho }}</strong></span>
+      </div>
+    </div>
+  </div>
+</section>
