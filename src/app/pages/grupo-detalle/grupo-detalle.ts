@@ -375,7 +375,12 @@ export class GrupoDetalle implements OnInit {
   cargandoUrlsDetalle = signal(false);
 
   // Perfiles de usuario & Historial de actividad
-  usuariosMap = signal<Record<string, string>>({});
+  usuariosMap = signal<Record<string, string>>({
+    'b34c1aaa-5011-704e-e9bf-e6f62c2ee306': 'luciano.barbosa30@gmail.com',
+    'b3dc0ada-20e1-70bf-133e-5ce5f6c2d36c': 'luciano_l17@hotmail.com',
+    'd3bcaaea-8091-7090-e940-37cf06abf4c1': 'leandroserapio95@gmail.com',
+    '34181498-4001-7030-bfe0-92e87e7858b3': 'luciano_l17@hotmail.com',
+  });
   mostrarModalLogs = signal(false);
 
   constructor(
@@ -394,7 +399,10 @@ export class GrupoDetalle implements OnInit {
       this.userId.set(userId);
 
       this.auth.getEmail?.().then((email) => {
-        if (email) this.materiaService.sincronizarPerfilUsuario?.(userId, email);
+        if (email) {
+          this.usuariosMap.update((m) => ({ ...m, [userId]: email }));
+          this.materiaService.sincronizarPerfilUsuario?.(userId, email);
+        }
       }).catch(() => {});
 
       const grupo = await this.materiaService.obtenerGrupo(grupoId);
@@ -402,7 +410,8 @@ export class GrupoDetalle implements OnInit {
       this.grupo.set(grupo);
 
       if (this.materiaService.obtenerMapaUsuarios) {
-        this.usuariosMap.set(await this.materiaService.obtenerMapaUsuarios());
+        const mapa = await this.materiaService.obtenerMapaUsuarios();
+        this.usuariosMap.update((actual) => ({ ...actual, ...mapa }));
       }
 
       // Determinar rol y validar acceso
@@ -1082,8 +1091,22 @@ export class GrupoDetalle implements OnInit {
       const materia = await this.materiaService.obtenerMateria(g.materiaId);
       if (!materia) throw new Error('Materia no encontrada');
 
-      const alumnos = (materia.alumnos ?? []).filter(
-        (a): a is string => !!a && (this.esDocente() || a !== g.adminId)
+      const docentesSet = new Set<string>([
+        ...(materia.creadorId ? [materia.creadorId] : []),
+        ...((materia.admins ?? []).filter((x): x is string => !!x)),
+        ...((materia.profesores ?? []).filter((x): x is string => !!x)),
+      ]);
+
+      const candidatosSet = new Set<string>();
+      for (const a of materia.alumnos ?? []) {
+        if (a && !docentesSet.has(a)) candidatosSet.add(a);
+      }
+      for (const i of g.integrantes ?? []) {
+        if (i && !docentesSet.has(i)) candidatosSet.add(i);
+      }
+
+      const alumnos = Array.from(candidatosSet).filter(
+        (a) => this.esDocente() || a !== g.adminId
       );
 
       const ocupados = await this.materiaService.alumnosEnOtroGrupo(
@@ -1096,7 +1119,7 @@ export class GrupoDetalle implements OnInit {
       this.alumnosAgregables.set(alumnos.filter((a) => !ocupadosSet.has(a)));
       this.integrantesSeleccionados.set(
         (g.integrantes ?? []).filter(
-          (i): i is string => !!i && (this.esDocente() || i !== g.adminId)
+          (i): i is string => !!i && !docentesSet.has(i) && (this.esDocente() || i !== g.adminId)
         )
       );
       this.mostrarModalIntegrantes.set(true);
@@ -1198,7 +1221,7 @@ export class GrupoDetalle implements OnInit {
   // ==== Eliminar grupo completo ====
 
   get puedeEliminarGrupo(): boolean {
-    return this.esAdminDelGrupo() && this.todasLasCards().length === 0;
+    return this.esDocente() || (this.esAdminDelGrupo() && this.todasLasCards().length === 0);
   }
 
   abrirConfirmarEliminarGrupo() {
@@ -1280,7 +1303,7 @@ export class GrupoDetalle implements OnInit {
 
   nombreUsuario(id: string | null | undefined): string {
     if (!id) return '';
-    return this.usuariosMap()[id] ?? id;
+    return this.usuariosMap()[id] ?? `Usuario (${id.slice(0, 6)})`;
   }
 
   nombresAsignados(card: Card): string {

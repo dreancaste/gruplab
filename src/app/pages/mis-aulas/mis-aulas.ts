@@ -69,7 +69,9 @@ export class MisAulas implements OnInit {
   get materiasComoDocente(): Materia[] {
     const uid = this.userId();
     if (!uid) return [];
-    return this.misMaterias().filter((m) => m.admins?.includes(uid) || m.profesores?.includes(uid));
+    return this.misMaterias().filter(
+      (m) => m.creadorId === uid || m.admins?.includes(uid) || m.profesores?.includes(uid),
+    );
   }
 
   get materiasComoAlumno(): Materia[] {

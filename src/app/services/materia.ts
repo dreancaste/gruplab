@@ -60,7 +60,7 @@ export class MateriaService {
    * Devuelve el rol del usuario dentro de la materia, o null si no participa.
    */
   obtenerRol(materia: Materia, userId: string): 'admin' | 'profesor' | 'alumno' | null {
-    if (materia.admins?.includes(userId)) return 'admin';
+    if (materia.creadorId === userId || materia.admins?.includes(userId)) return 'admin';
     if (materia.profesores?.includes(userId)) return 'profesor';
     if (materia.alumnos?.includes(userId)) return 'alumno';
     return null;
@@ -592,7 +592,34 @@ export class MateriaService {
 
   // ==== Perfiles de usuario (Email / Nombre legible) ====
 
-  private perfilesCache: Record<string, string> = {};
+  private perfilesCache: Record<string, string> = {
+    'b34c1aaa-5011-704e-e9bf-e6f62c2ee306': 'luciano.barbosa30@gmail.com',
+    'b3dc0ada-20e1-70bf-133e-5ce5f6c2d36c': 'luciano_l17@hotmail.com',
+    'd3bcaaea-8091-7090-e940-37cf06abf4c1': 'leandroserapio95@gmail.com',
+    '34181498-4001-7030-bfe0-92e87e7858b3': 'luciano_l17@hotmail.com',
+  };
+
+  async eliminarAlumnoDeMateria(materiaId: string, alumnoId: string): Promise<Materia> {
+    const materia = await this.obtenerMateria(materiaId);
+    if (!materia) throw new Error('Materia no encontrada');
+
+    // Quitar también de cualquier grupo de la materia
+    const grupos = await this.listarGruposDeMateria(materiaId);
+    for (const g of grupos) {
+      if ((g.integrantes ?? []).includes(alumnoId)) {
+        const restantes = (g.integrantes ?? []).filter((id): id is string => !!id && id !== alumnoId);
+        await this.actualizarGrupo(g.id, { integrantes: restantes });
+      }
+    }
+
+    const alumnos = (materia.alumnos ?? []).filter((id): id is string => !!id && id !== alumnoId);
+    const { data, errors } = await client.models.Materia.update({
+      id: materiaId,
+      alumnos,
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data!;
+  }
 
   async sincronizarPerfilUsuario(userId: string, email: string | null): Promise<void> {
     if (!userId || !email) return;

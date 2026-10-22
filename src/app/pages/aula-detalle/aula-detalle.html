@@ -19,13 +19,6 @@
           {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
         </div>
         <button
-          *ngIf="esDocente"
-          class="btn-secundario"
-          (click)="abrirParticipantes()"
-        >
-          👥 Participantes ({{ alumnosDisponibles.length + profesoresAula.length + adminsAula.length }})
-        </button>
-        <button
           *ngIf="esAdmin"
           class="btn-peligro"
           (click)="abrirConfirmarEliminarAula()"
@@ -45,10 +38,10 @@
       ></app-dashboard>
 
       <div class="header-seccion">
-        <h2>Grupos ({{ grupos().length }})</h2>
+        <h2>Grupos del aula ({{ grupos().length }})</h2>
         <div class="acciones-seccion">
           <div class="codigo-invitacion">
-            Código: <code>{{ materia()!.codigoInvitacion }}</code>
+            Código de invitación: <code>{{ materia()!.codigoInvitacion }}</code>
           </div>
           <button class="btn-primario" (click)="abrirCrearGrupo()">+ Crear grupo</button>
         </div>
@@ -60,11 +53,11 @@
         <div class="card-grupo" *ngFor="let g of grupos()" (click)="abrirGrupo(g.id)">
           <div class="card-header">
             <h3>{{ g.nombre }}</h3>
-            <div class="card-acciones">
-              <button class="btn-icono" title="Editar" (click)="abrirEditarGrupo(g, $event)">
+            <div class="card-acciones" (click)="$event.stopPropagation()">
+              <button class="btn-icono" title="Editar grupo e integrantes" (click)="abrirEditarGrupo(g, $event)">
                 ✏️
               </button>
-              <button class="btn-icono" title="Eliminar" (click)="confirmarEliminar(g, $event)">
+              <button class="btn-icono" title="Eliminar grupo" (click)="confirmarEliminar(g, $event)">
                 🗑️
               </button>
             </div>
@@ -72,7 +65,8 @@
           <p class="meta">
             {{ g.integrantes?.length ?? 0 }} integrante{{
               (g.integrantes?.length ?? 0) === 1 ? '' : 's'
-            }}
+            }}:
+            <strong>{{ nombresIntegrantesGrupo(g) }}</strong>
           </p>
 
           <!-- Solicitudes pendientes (visible para docente) -->
@@ -106,6 +100,73 @@
           <span class="proximamente">Ver tablero →</span>
         </div>
       </div>
+
+      <!-- SECCIÓN VISIBLE DE LISTA DE ALUMNOS Y DOCENTES DEL AULA -->
+      <div class="panel-alumnos-docente">
+        <div class="header-seccion">
+          <h2>🎓 Alumnos inscriptos en el aula ({{ alumnosDisponibles.length }})</h2>
+        </div>
+
+        <p *ngIf="alumnosDisponibles.length === 0" class="vacio">
+          Todavía no hay alumnos inscriptos en esta aula. Compartí el código
+          <code>{{ materia()!.codigoInvitacion }}</code> para que se unan.
+        </p>
+
+        <div class="tabla-alumnos" *ngIf="alumnosDisponibles.length > 0">
+          <div class="fila-alumno-aula" *ngFor="let alumnoId of alumnosDisponibles">
+            <div class="alumno-info-principal">
+              <strong class="alumno-nombre-email">{{ nombreUsuario(alumnoId) }}</strong>
+              <span
+                class="badge-grupo-actual"
+                [class.sin-grupo-badge]="!grupoDeAlumno(alumnoId)"
+              >
+                {{
+                  grupoDeAlumno(alumnoId)
+                    ? 'Grupo: ' + grupoDeAlumno(alumnoId)!.nombre
+                    : 'Sin grupo asignado'
+                }}
+              </span>
+            </div>
+            <div class="acciones-alumno-aula">
+              <button
+                *ngIf="grupoDeAlumno(alumnoId)"
+                class="btn-mini"
+                (click)="abrirGrupo(grupoDeAlumno(alumnoId)!.id)"
+              >
+                Ir a su grupo →
+              </button>
+              <button
+                class="btn-mini btn-promover"
+                (click)="promoverAProfesor(alumnoId)"
+              >
+                ⬆️ Hacer profesor
+              </button>
+              <button
+                class="btn-mini btn-quitar-aula"
+                (click)="quitarAlumnoDelAula(alumnoId)"
+              >
+                🗑️ Quitar del aula
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profesores del aula -->
+        <div class="subseccion-profesores" *ngIf="profesoresAula.length > 0">
+          <h3>Profesores adjuntos ({{ profesoresAula.length }})</h3>
+          <div class="fila-alumno-aula" *ngFor="let profId of profesoresAula">
+            <div class="alumno-info-principal">
+              <strong class="alumno-nombre-email">{{ nombreUsuario(profId) }}</strong>
+              <span class="rol-badge rol-profesor">Profesor</span>
+            </div>
+            <div class="acciones-alumno-aula" *ngIf="esAdmin">
+              <button class="btn-mini" (click)="degradarAAlumno(profId)">
+                Pasar a alumno
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- VISTA ALUMNO -->
@@ -125,7 +186,7 @@
             <p class="meta">
               {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
                 (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
-              }}
+              }} ({{ nombresIntegrantesGrupo(miGrupo()!) }})
               · {{ esAdminDeMiGrupo() ? 'Sos administrador del grupo' : 'Integrante' }}
             </p>
           </div>
@@ -178,7 +239,8 @@
             <p class="meta">
               {{ g.integrantes?.length ?? 0 }} integrante{{
                 (g.integrantes?.length ?? 0) === 1 ? '' : 's'
-              }}
+              }}:
+              <strong>{{ nombresIntegrantesGrupo(g) }}</strong>
             </p>
 
             <!-- Botón Solicitar acceso solo si el alumno aún no tiene grupo -->
@@ -204,54 +266,6 @@
       </div>
     </section>
   </ng-container>
-</div>
-
-<!-- MODAL PARTICIPANTES Y ROLES (Promover alumnos a profesor) -->
-<div class="modal-backdrop" *ngIf="mostrarModalParticipantes()" (click)="cerrarParticipantes()">
-  <div class="modal modal-participantes" (click)="$event.stopPropagation()">
-    <h3>Participantes del aula</h3>
-
-    <div class="seccion-participantes">
-      <h4>Administradores y Profesores</h4>
-      <div class="fila-participante" *ngFor="let id of adminsAula">
-        <span class="alumno-id">{{ nombreUsuario(id) }}</span>
-        <span class="rol-badge rol-admin">Admin</span>
-      </div>
-      <div class="fila-participante" *ngFor="let id of profesoresAula">
-        <span class="alumno-id">{{ nombreUsuario(id) }}</span>
-        <div class="acciones-participante">
-          <span class="rol-badge rol-profesor">Profesor</span>
-          <button
-            *ngIf="esAdmin"
-            class="btn-mini"
-            (click)="degradarAAlumno(id)"
-          >
-            Pasar a alumno
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="seccion-participantes">
-      <h4>Alumnos inscriptos ({{ alumnosDisponibles.length }})</h4>
-      <p *ngIf="alumnosDisponibles.length === 0" class="ayuda">
-        Todavía no hay alumnos inscriptos en esta aula.
-      </p>
-      <div class="fila-participante" *ngFor="let alumnoId of alumnosDisponibles">
-        <span class="alumno-id">{{ nombreUsuario(alumnoId) }}</span>
-        <button
-          class="btn-mini btn-promover"
-          (click)="promoverAProfesor(alumnoId)"
-        >
-          ⬆️ Promover a profesor
-        </button>
-      </div>
-    </div>
-
-    <div class="modal-acciones">
-      <button class="btn-primario" (click)="cerrarParticipantes()">Cerrar</button>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL CREAR/EDITAR GRUPO (profesor) -->

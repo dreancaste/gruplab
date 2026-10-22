@@ -473,6 +473,83 @@ button.btn-secundario {
       background: #dbeafe;
     }
   }
+
+  &.btn-quitar-aula {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+
+    &:hover {
+      background: #fee2e2;
+    }
+  }
+}
+
+.panel-alumnos-docente {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.tabla-alumnos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fila-alumno-aula {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.alumno-info-principal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+
+  .alumno-nombre-email {
+    font-size: 0.92rem;
+    color: #111827;
+  }
+}
+
+.badge-grupo-actual {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+
+  &.sin-grupo-badge {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+}
+
+.acciones-alumno-aula {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.subseccion-profesores {
+  margin-top: 1.5rem;
+
+  h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    color: #374151;
+  }
 }
 
 .integrantes {
@@ -757,5 +834,82 @@ button.btn-secundario {
     &:hover {
       background: #dbeafe;
     }
+  }
+
+  &.btn-quitar-aula {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+
+    &:hover {
+      background: #fee2e2;
+    }
+  }
+}
+
+.panel-alumnos-docente {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.tabla-alumnos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fila-alumno-aula {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.alumno-info-principal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+
+  .alumno-nombre-email {
+    font-size: 0.92rem;
+    color: #111827;
+  }
+}
+
+.badge-grupo-actual {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+
+  &.sin-grupo-badge {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+}
+
+.acciones-alumno-aula {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.subseccion-profesores {
+  margin-top: 1.5rem;
+
+  h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    color: #374151;
   }
 }

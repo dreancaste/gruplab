@@ -22,7 +22,12 @@ export class AulaDetalle implements OnInit {
   materia = signal<Materia | null>(null);
   grupos = signal<Grupo[]>([]);
   cardsPorGrupo = signal<Record<string, Card[]>>({});
-  usuariosMap = signal<Record<string, string>>({});
+  usuariosMap = signal<Record<string, string>>({
+    'b34c1aaa-5011-704e-e9bf-e6f62c2ee306': 'luciano.barbosa30@gmail.com',
+    'b3dc0ada-20e1-70bf-133e-5ce5f6c2d36c': 'luciano_l17@hotmail.com',
+    'd3bcaaea-8091-7090-e940-37cf06abf4c1': 'leandroserapio95@gmail.com',
+    '34181498-4001-7030-bfe0-92e87e7858b3': 'luciano_l17@hotmail.com',
+  });
   miGrupo = signal<Grupo | null>(null);
   userId = signal<string | null>(null);
   rol = signal<'admin' | 'profesor' | 'alumno' | null>(null);
@@ -68,7 +73,10 @@ export class AulaDetalle implements OnInit {
       this.userId.set(uid);
 
       this.auth.getEmail?.().then((email) => {
-        if (email) this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+        if (email) {
+          this.usuariosMap.update((m) => ({ ...m, [uid]: email }));
+          this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+        }
       }).catch(() => {});
 
       const materia = await this.materiaService.obtenerMateria(id);
@@ -80,7 +88,8 @@ export class AulaDetalle implements OnInit {
       if (!rol) throw new Error('No tenés acceso a esta aula');
 
       if (this.materiaService.obtenerMapaUsuarios) {
-        this.usuariosMap.set(await this.materiaService.obtenerMapaUsuarios());
+        const mapa = await this.materiaService.obtenerMapaUsuarios();
+        this.usuariosMap.update((actual) => ({ ...actual, ...mapa }));
       }
 
       await this.recargarGrupos();
@@ -140,7 +149,17 @@ export class AulaDetalle implements OnInit {
 
   nombreUsuario(id: string | null | undefined): string {
     if (!id) return '';
-    return this.usuariosMap()[id] ?? id;
+    return this.usuariosMap()[id] ?? `Usuario (${id.slice(0, 6)})`;
+  }
+
+  nombresIntegrantesGrupo(g: Grupo): string {
+    const lista = (g.integrantes ?? []).filter((i): i is string => !!i);
+    if (lista.length === 0) return 'Sin integrantes';
+    return lista.map((id) => this.nombreUsuario(id)).join(', ');
+  }
+
+  grupoDeAlumno(alumnoId: string): Grupo | null {
+    return this.grupos().find((g) => (g.integrantes ?? []).includes(alumnoId)) ?? null;
   }
 
   get esDocente(): boolean {
@@ -148,16 +167,36 @@ export class AulaDetalle implements OnInit {
     return r === 'admin' || r === 'profesor';
   }
 
-  get alumnosDisponibles(): string[] {
-    return (this.materia()?.alumnos ?? []).filter((id): id is string => !!id);
+  get adminsAula(): string[] {
+    const m = this.materia();
+    if (!m) return [];
+    const set = new Set<string>();
+    if (m.creadorId) set.add(m.creadorId);
+    for (const id of m.admins ?? []) {
+      if (id) set.add(id);
+    }
+    return Array.from(set);
   }
 
   get profesoresAula(): string[] {
-    return (this.materia()?.profesores ?? []).filter((id): id is string => !!id);
+    const admins = new Set(this.adminsAula);
+    return (this.materia()?.profesores ?? []).filter(
+      (id): id is string => !!id && !admins.has(id),
+    );
   }
 
-  get adminsAula(): string[] {
-    return (this.materia()?.admins ?? []).filter((id): id is string => !!id);
+  get alumnosDisponibles(): string[] {
+    const docentes = new Set([...this.adminsAula, ...this.profesoresAula]);
+    const set = new Set<string>();
+    for (const id of this.materia()?.alumnos ?? []) {
+      if (id && !docentes.has(id)) set.add(id);
+    }
+    for (const g of this.grupos()) {
+      for (const id of g.integrantes ?? []) {
+        if (id && !docentes.has(id)) set.add(id);
+      }
+    }
+    return Array.from(set);
   }
 
   get esAdmin(): boolean {
@@ -261,6 +300,21 @@ export class AulaDetalle implements OnInit {
     }
   }
 
+  async quitarAlumnoDelAula(alumnoId: string) {
+    const m = this.materia();
+    if (!m) return;
+    if (!confirm(`¿Seguro que querés dar de baja a ${this.nombreUsuario(alumnoId)} de esta aula?`)) {
+      return;
+    }
+    try {
+      const actualizada = await this.materiaService.eliminarAlumnoDeMateria(m.id, alumnoId);
+      this.materia.set(actualizada);
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo eliminar al alumno del aula');
+    }
+  }
+
   volver() {
     this.router.navigate(['/mis-aulas']);
   }
@@ -308,9 +362,9 @@ export class AulaDetalle implements OnInit {
     this.modoEdicion.set(true);
     this.grupoEditandoId.set(g.id);
     this.nombreGrupo = g.nombre;
-    const alumnos = this.materia()?.alumnos ?? [];
+    const disponibles = new Set(this.alumnosDisponibles);
     this.integrantesSeleccionados.set(
-      (g.integrantes ?? []).filter((uid): uid is string => !!uid && alumnos.includes(uid)),
+      (g.integrantes ?? []).filter((uid): uid is string => !!uid && disponibles.has(uid)),
     );
     this.error.set(null);
     this.mostrarModalGrupo.set(true);
@@ -352,7 +406,8 @@ export class AulaDetalle implements OnInit {
         grupoIdExcluir ?? undefined,
       );
       if (ocupados.length > 0) {
-        this.error.set(`Estos alumnos ya están en otro grupo: ${ocupados.join(', ')}`);
+        const nombres = ocupados.map((id) => this.nombreUsuario(id)).join(', ');
+        this.error.set(`Estos alumnos ya están en otro grupo: ${nombres}`);
         return;
       }
 
@@ -367,9 +422,7 @@ export class AulaDetalle implements OnInit {
           this.nombreGrupo.trim(),
           uid,
         );
-        if (integrantes.length > 0) {
-          await this.materiaService.actualizarGrupo(nuevo.id, { integrantes });
-        }
+        await this.materiaService.actualizarGrupo(nuevo.id, { integrantes });
       }
 
       await this.recargarGrupos();

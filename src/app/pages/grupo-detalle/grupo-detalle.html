@@ -37,6 +37,13 @@
           <button class="btn-secundario" (click)="abrirEditarNombre()">
             ✏️ Nombre
           </button>
+          <button
+            *ngIf="puedeEliminarGrupo"
+            class="btn-peligro"
+            (click)="abrirConfirmarEliminarGrupo()"
+          >
+            🗑️ Eliminar grupo
+          </button>
         </ng-container>
       </div>
     </header>
@@ -442,7 +449,6 @@
             </span>
             <button
               class="btn-mini btn-eliminar-adjunto"
-              *ngIf="!esDocente()"
               (click)="eliminarAdjunto(cardDetalle()!, key || '', $event)"
               title="Eliminar adjunto"
             >
@@ -457,7 +463,6 @@
       <input #detalleInput type="file" style="display:none" (change)="subirArchivo(cardDetalle()!, $event)" />
       <button
         class="btn-secundario"
-        *ngIf="!esDocente()"
         (click)="abrirSelectorArchivo(detalleInput)"
         [disabled]="subiendoAdjuntoCardId() === cardDetalle()!.id"
       >
