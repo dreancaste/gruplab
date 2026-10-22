@@ -25,6 +25,10 @@ export class AulaDetalle implements OnInit {
   cargando = signal(true);
   error = signal<string | null>(null);
 
+  // Solicitudes de acceso por grupoId -> lista de userIds solicitantes
+  solicitudesPorGrupo = signal<Record<string, string[]>>({});
+  enviandoSolicitudGrupoId = signal<string | null>(null);
+
   // Modal crear/editar grupo
   mostrarModalGrupo = signal(false);
   modoEdicion = signal(false);
@@ -64,12 +68,7 @@ export class AulaDetalle implements OnInit {
       this.rol.set(rol);
       if (!rol) throw new Error('No tenés acceso a esta aula');
 
-      if (rol === 'alumno') {
-        const grupo = await this.materiaService.obtenerMiGrupo(id, uid);
-        this.miGrupo.set(grupo);
-      } else {
-        await this.recargarGrupos();
-      }
+      await this.recargarGrupos();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al cargar el aula');
     } finally {
@@ -79,9 +78,32 @@ export class AulaDetalle implements OnInit {
 
   private async recargarGrupos() {
     const materia = this.materia();
-    if (!materia) return;
+    const uid = this.userId();
+    if (!materia || !uid) return;
+
     const grupos = await this.materiaService.listarGruposDeMateria(materia.id);
     this.grupos.set(grupos);
+
+    if (this.rol() === 'alumno') {
+      const propio = grupos.find((g) => (g.integrantes ?? []).includes(uid)) ?? null;
+      this.miGrupo.set(propio);
+    }
+
+    // Cargar solicitudes pendientes de cada grupo
+    const mapa: Record<string, string[]> = {};
+    await Promise.all(
+      grupos.map(async (g) => {
+        try {
+          mapa[g.id] = await this.materiaService.listarSolicitudesPendientesDeGrupo(
+            g.id,
+            g.integrantes ?? [],
+          );
+        } catch {
+          mapa[g.id] = [];
+        }
+      }),
+    );
+    this.solicitudesPorGrupo.set(mapa);
   }
 
   // ==== Helpers ====
@@ -92,12 +114,75 @@ export class AulaDetalle implements OnInit {
   }
 
   get alumnosDisponibles(): string[] {
-    // Todos los alumnos de la materia menos el user actual (si es alumno)
     return (this.materia()?.alumnos ?? []).filter((id): id is string => !!id);
   }
 
-    get esAdmin(): boolean {
+  get esAdmin(): boolean {
     return this.rol() === 'admin';
+  }
+
+  get otrosGruposDelSalon(): Grupo[] {
+    const miId = this.miGrupo()?.id;
+    return this.grupos().filter((g) => g.id !== miId);
+  }
+
+  yaSolicitoAcceso(grupoId: string): boolean {
+    const uid = this.userId();
+    if (!uid) return false;
+    return (this.solicitudesPorGrupo()[grupoId] ?? []).includes(uid);
+  }
+
+  solicitudesDeGrupo(grupoId: string): string[] {
+    return this.solicitudesPorGrupo()[grupoId] ?? [];
+  }
+
+  esAdminDeMiGrupo(): boolean {
+    const g = this.miGrupo();
+    const uid = this.userId();
+    return !!g && !!uid && g.adminId === uid;
+  }
+
+  async solicitarAcceso(grupo: Grupo, event?: Event) {
+    event?.stopPropagation();
+    const uid = this.userId();
+    if (!uid || this.miGrupo()) return;
+
+    this.enviandoSolicitudGrupoId.set(grupo.id);
+    this.error.set(null);
+    try {
+      await this.materiaService.solicitarAccesoGrupo(grupo.id, uid);
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo enviar la solicitud');
+    } finally {
+      this.enviandoSolicitudGrupoId.set(null);
+    }
+  }
+
+  async responderSolicitud(grupo: Grupo, solicitanteId: string, aprobar: boolean, event?: Event) {
+    event?.stopPropagation();
+    const uid = this.userId();
+    const materia = this.materia();
+    if (!uid || !materia) return;
+
+    this.error.set(null);
+    try {
+      if (aprobar) {
+        const ocupados = await this.materiaService.alumnosEnOtroGrupo(
+          materia.id,
+          [solicitanteId],
+          grupo.id,
+        );
+        if (ocupados.length > 0) {
+          this.error.set('Este alumno ya forma parte de otro grupo en esta aula.');
+          return;
+        }
+      }
+      await this.materiaService.resolverSolicitudAcceso(grupo.id, solicitanteId, aprobar, uid);
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al procesar la solicitud');
+    }
   }
 
   volver() {
@@ -124,6 +209,7 @@ export class AulaDetalle implements OnInit {
     try {
       const nuevo = await this.materiaService.crearGrupo(materia.id, this.nombreGrupo.trim(), uid);
       this.miGrupo.set(nuevo);
+      await this.recargarGrupos();
       this.cerrarCrearGrupoAlumno();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al crear el grupo');
@@ -146,7 +232,6 @@ export class AulaDetalle implements OnInit {
     this.modoEdicion.set(true);
     this.grupoEditandoId.set(g.id);
     this.nombreGrupo = g.nombre;
-    // Excluye al admin del grupo (profesor) si no es alumno de la materia
     const alumnos = this.materia()?.alumnos ?? [];
     this.integrantesSeleccionados.set(
       (g.integrantes ?? []).filter((uid): uid is string => !!uid && alumnos.includes(uid)),
@@ -185,7 +270,6 @@ export class AulaDetalle implements OnInit {
       const integrantes = this.integrantesSeleccionados();
       const grupoIdExcluir = this.modoEdicion() ? this.grupoEditandoId() : undefined;
 
-      // Regla: un alumno solo puede estar en un grupo por materia
       const ocupados = await this.materiaService.alumnosEnOtroGrupo(
         materia.id,
         integrantes,
@@ -202,7 +286,6 @@ export class AulaDetalle implements OnInit {
           integrantes,
         });
       } else {
-        // Crear como profesor: adminId = profesor, integrantes seleccionados
         const nuevo = await this.materiaService.crearGrupo(
           materia.id,
           this.nombreGrupo.trim(),
@@ -245,13 +328,13 @@ export class AulaDetalle implements OnInit {
     }
   }
 
-  // ==== Ver grupo (próximo paso) ====
+  // ==== Ver grupo ====
 
   abrirGrupo(grupoId: string) {
     this.router.navigate(['/grupo', grupoId]);
   }
 
-    // ==== Eliminar aula ====
+  // ==== Eliminar aula ====
 
   abrirConfirmarEliminarAula() {
     this.mostrarConfirmarEliminarAula.set(true);

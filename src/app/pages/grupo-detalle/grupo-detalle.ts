@@ -1188,4 +1188,56 @@ export class GrupoDetalle implements OnInit {
       this.error.set(e.message ?? 'Error al eliminar el grupo');
     }
   }
+
+  // ==== Solicitudes de acceso al grupo ====
+
+  solicitudesPendientes = computed(() => {
+    const integrantesSet = new Set(this.integrantesGrupo());
+    const ordenados = [...this.logs()].sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+    const estadoPorUsuario = new Map<string, 'pendiente' | 'resuelta'>();
+
+    for (const log of ordenados) {
+      if (log.entidad !== 'SolicitudGrupo' || !log.entidadId) continue;
+      if (log.accion === 'solicitar_acceso') {
+        estadoPorUsuario.set(log.entidadId, 'pendiente');
+      } else if (log.accion === 'aprobar_acceso' || log.accion === 'rechazar_acceso') {
+        estadoPorUsuario.set(log.entidadId, 'resuelta');
+      }
+    }
+
+    const pendientes: string[] = [];
+    for (const [uid, estado] of estadoPorUsuario.entries()) {
+      if (estado === 'pendiente' && !integrantesSet.has(uid)) {
+        pendientes.push(uid);
+      }
+    }
+    return pendientes;
+  });
+
+  async responderSolicitud(solicitanteId: string, aprobar: boolean) {
+    const g = this.grupo();
+    const uid = this.userId();
+    if (!g || !uid) return;
+
+    this.error.set(null);
+    try {
+      if (aprobar && g.materiaId) {
+        const ocupados = await this.materiaService.alumnosEnOtroGrupo(
+          g.materiaId,
+          [solicitanteId],
+          g.id,
+        );
+        if (ocupados.length > 0) {
+          this.error.set('Este alumno ya forma parte de otro grupo en esta aula.');
+          return;
+        }
+      }
+      await this.materiaService.resolverSolicitudAcceso(g.id, solicitanteId, aprobar, uid);
+      const actualizado = await this.materiaService.obtenerGrupo(g.id);
+      if (actualizado) this.grupo.set(actualizado);
+      await this.recargarLogs();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al procesar la solicitud');
+    }
+  }
 }

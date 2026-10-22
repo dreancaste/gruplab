@@ -492,4 +492,61 @@ export class MateriaService {
     const { errors } = await client.models.Materia.delete({ id: materiaId });
     if (errors?.length) throw new Error(errors[0].message);
   }
+
+  // ==== Solicitudes de acceso a grupo ====
+
+  async solicitarAccesoGrupo(grupoId: string, userId: string): Promise<void> {
+    await this.registrarLog(grupoId, userId, 'solicitar_acceso', 'SolicitudGrupo', userId);
+  }
+
+  async listarSolicitudesPendientesDeGrupo(
+    grupoId: string,
+    integrantesActuales: (string | null | undefined)[] = [],
+  ): Promise<string[]> {
+    const logs = await this.listarLogsDeGrupo(grupoId);
+    const integrantesSet = new Set(integrantesActuales.filter((x): x is string => !!x));
+    // Ordenar cronológicamente ascendente para quedarnos con el último estado por solicitante
+    const ordenados = [...logs].sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+    const estadoPorUsuario = new Map<string, 'pendiente' | 'resuelta'>();
+
+    for (const log of ordenados) {
+      if (log.entidad !== 'SolicitudGrupo') continue;
+      const solicitanteId = log.entidadId;
+      if (!solicitanteId) continue;
+      if (log.accion === 'solicitar_acceso') {
+        estadoPorUsuario.set(solicitanteId, 'pendiente');
+      } else if (log.accion === 'aprobar_acceso' || log.accion === 'rechazar_acceso') {
+        estadoPorUsuario.set(solicitanteId, 'resuelta');
+      }
+    }
+
+    const pendientes: string[] = [];
+    for (const [uid, estado] of estadoPorUsuario.entries()) {
+      if (estado === 'pendiente' && !integrantesSet.has(uid)) {
+        pendientes.push(uid);
+      }
+    }
+    return pendientes;
+  }
+
+  async resolverSolicitudAcceso(
+    grupoId: string,
+    solicitanteId: string,
+    aprobar: boolean,
+    resueltoPorId: string,
+  ): Promise<void> {
+    if (aprobar) {
+      const grupo = await this.obtenerGrupo(grupoId);
+      if (!grupo) throw new Error('Grupo no encontrado');
+      const actuales = (grupo.integrantes ?? []).filter((x): x is string => !!x);
+      if (!actuales.includes(solicitanteId)) {
+        await this.actualizarGrupo(grupoId, {
+          integrantes: [...actuales, solicitanteId],
+        });
+      }
+      await this.registrarLog(grupoId, resueltoPorId, 'aprobar_acceso', 'SolicitudGrupo', solicitanteId);
+    } else {
+      await this.registrarLog(grupoId, resueltoPorId, 'rechazar_acceso', 'SolicitudGrupo', solicitanteId);
+    }
+  }
 }

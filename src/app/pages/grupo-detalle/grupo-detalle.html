@@ -37,6 +37,27 @@
       </div>
     </header>
 
+    <!-- SOLICITUDES DE ACCESO PENDIENTES (admin del grupo o docente) -->
+    <section
+      class="solicitudes-banner"
+      *ngIf="(esAdminDelGrupo() || esDocente()) && solicitudesPendientes().length > 0"
+    >
+      <h3>🔔 Solicitudes para unirse al grupo ({{ solicitudesPendientes().length }})</h3>
+      <div class="solicitudes-lista">
+        <div class="solicitud-item" *ngFor="let solId of solicitudesPendientes()">
+          <span class="solicitante-id">{{ solId }}</span>
+          <div class="solicitud-acciones">
+            <button class="btn-aceptar" (click)="responderSolicitud(solId, true)">
+              ✓ Aceptar
+            </button>
+            <button class="btn-rechazar" (click)="responderSolicitud(solId, false)">
+              ✕ Rechazar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- PARTICIPACIÓN DEL EQUIPO — solo porcentajes -->
     <section class="metricas-aporte" aria-labelledby="titulo-metricas">
       <div class="metricas-cabecera">

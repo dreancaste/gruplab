@@ -7,26 +7,26 @@
   <ng-container *ngIf="!cargando() && materia()">
     <!-- CABECERA -->
     <header class="cabecera">
-  <div>
-    <h1>{{ materia()!.nombre }}</h1>
-    <p *ngIf="materia()!.descripcion" class="descripcion">
-      {{ materia()!.descripcion }}
-    </p>
-  </div>
+      <div>
+        <h1>{{ materia()!.nombre }}</h1>
+        <p *ngIf="materia()!.descripcion" class="descripcion">
+          {{ materia()!.descripcion }}
+        </p>
+      </div>
 
-  <div class="cabecera-acciones">
-    <div class="rol-badge" [class]="'rol-' + rol()">
-      {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
-    </div>
-    <button
-      *ngIf="esAdmin"
-      class="btn-peligro"
-      (click)="abrirConfirmarEliminarAula()"
-    >
-      🗑️ Eliminar aula
-    </button>
-  </div>
-</header>
+      <div class="cabecera-acciones">
+        <div class="rol-badge" [class]="'rol-' + rol()">
+          {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
+        </div>
+        <button
+          *ngIf="esAdmin"
+          class="btn-peligro"
+          (click)="abrirConfirmarEliminarAula()"
+        >
+          🗑️ Eliminar aula
+        </button>
+      </div>
+    </header>
 
     <!-- VISTA PROFESOR / ADMIN -->
     <section *ngIf="esDocente">
@@ -60,6 +60,35 @@
               (g.integrantes?.length ?? 0) === 1 ? '' : 's'
             }}
           </p>
+
+          <!-- Solicitudes pendientes (visible para docente) -->
+          <div
+            class="solicitudes-box"
+            *ngIf="solicitudesDeGrupo(g.id).length > 0"
+            (click)="$event.stopPropagation()"
+          >
+            <p class="solicitudes-titulo">
+              🔔 Solicitudes pendientes ({{ solicitudesDeGrupo(g.id).length }})
+            </p>
+            <div class="solicitud-fila" *ngFor="let solId of solicitudesDeGrupo(g.id)">
+              <span class="solicitante-id" [title]="solId">{{ solId }}</span>
+              <div class="solicitud-botones">
+                <button
+                  class="btn-aceptar"
+                  (click)="responderSolicitud(g, solId, true, $event)"
+                >
+                  ✓ Aceptar
+                </button>
+                <button
+                  class="btn-rechazar"
+                  (click)="responderSolicitud(g, solId, false, $event)"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+
           <span class="proximamente">Ver tablero →</span>
         </div>
       </div>
@@ -67,22 +96,97 @@
 
     <!-- VISTA ALUMNO -->
     <section *ngIf="!esDocente">
+      <!-- Si todavía no pertenece a ningún grupo -->
       <div *ngIf="!miGrupo()" class="sin-grupo">
         <h2>Todavía no estás en ningún grupo</h2>
-        <p>Podés crear tu propio grupo y luego invitar a tus compañeros.</p>
+        <p>Podés crear tu propio grupo o solicitar acceso a uno de los grupos existentes del salón.</p>
         <button class="btn-primario" (click)="abrirCrearGrupoAlumno()">+ Crear grupo</button>
       </div>
 
-      <div *ngIf="miGrupo()" class="mi-grupo">
+      <!-- Si ya pertenece a un grupo -->
+      <div *ngIf="miGrupo()" class="mi-grupo card-mi-grupo">
         <div class="header-seccion">
-          <h2>Mi grupo: {{ miGrupo()!.nombre }}</h2>
-          <button class="btn-primario" (click)="abrirGrupo(miGrupo()!.id)">Ver tablero</button>
+          <div>
+            <h2>Mi grupo: {{ miGrupo()!.nombre }}</h2>
+            <p class="meta">
+              {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
+                (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
+              }}
+              · {{ esAdminDeMiGrupo() ? 'Sos administrador del grupo' : 'Integrante' }}
+            </p>
+          </div>
+          <button class="btn-primario" (click)="abrirGrupo(miGrupo()!.id)">Ver tablero →</button>
         </div>
-        <p class="meta">
-          {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
-            (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
-          }}
+
+        <!-- Solicitudes pendientes para mi grupo (si soy el admin del grupo) -->
+        <div
+          class="solicitudes-box"
+          *ngIf="esAdminDeMiGrupo() && solicitudesDeGrupo(miGrupo()!.id).length > 0"
+        >
+          <p class="solicitudes-titulo">
+            🔔 Compañeros que solicitaron unirse ({{ solicitudesDeGrupo(miGrupo()!.id).length }})
+          </p>
+          <div class="solicitud-fila" *ngFor="let solId of solicitudesDeGrupo(miGrupo()!.id)">
+            <span class="solicitante-id" [title]="solId">{{ solId }}</span>
+            <div class="solicitud-botones">
+              <button
+                class="btn-aceptar"
+                (click)="responderSolicitud(miGrupo()!, solId, true, $event)"
+              >
+                ✓ Aceptar
+              </button>
+              <button
+                class="btn-rechazar"
+                (click)="responderSolicitud(miGrupo()!, solId, false, $event)"
+              >
+                ✕ Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listado de grupos del salón para alumnos -->
+      <div class="grupos-salon">
+        <div class="header-seccion">
+          <h2>Grupos del salón ({{ otrosGruposDelSalon.length }})</h2>
+        </div>
+
+        <p *ngIf="otrosGruposDelSalon.length === 0" class="vacio">
+          No hay otros grupos creados en este salón todavía.
         </p>
+
+        <div class="grid-grupos" *ngIf="otrosGruposDelSalon.length > 0">
+          <div class="card-grupo card-grupo-alumno" *ngFor="let g of otrosGruposDelSalon">
+            <div class="card-header">
+              <h3>{{ g.nombre }}</h3>
+            </div>
+            <p class="meta">
+              {{ g.integrantes?.length ?? 0 }} integrante{{
+                (g.integrantes?.length ?? 0) === 1 ? '' : 's'
+              }}
+            </p>
+
+            <!-- Botón Solicitar acceso solo si el alumno aún no tiene grupo -->
+            <ng-container *ngIf="!miGrupo()">
+              <button
+                *ngIf="!yaSolicitoAcceso(g.id)"
+                class="btn-secundario btn-solicitar"
+                [disabled]="enviandoSolicitudGrupoId() === g.id"
+                (click)="solicitarAcceso(g, $event)"
+              >
+                {{
+                  enviandoSolicitudGrupoId() === g.id
+                    ? 'Enviando…'
+                    : '🙋 Solicitar acceso'
+                }}
+              </button>
+              <span *ngIf="yaSolicitoAcceso(g.id)" class="badge-pendiente">
+                ⏳ Solicitud enviada
+              </span>
+            </ng-container>
+          </div>
+        </div>
       </div>
     </section>
   </ng-container>
