@@ -20,6 +20,11 @@ export class AuthService {
     }
   }
 
+  clearCache() {
+    this._userId = null;
+    this._email = null;
+  }
+
   async getUserId(): Promise<string> {
     if (this._userId) return this._userId;
     const user = await this.loadUser();
@@ -34,6 +39,7 @@ export class AuthService {
   }
 
   async logout() {
+    this.clearCache();
     await signOut();
   }
 }
