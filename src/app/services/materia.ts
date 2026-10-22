@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
-import { getUrl, uploadData } from 'aws-amplify/storage';
+import { getUrl, remove, uploadData } from 'aws-amplify/storage';
 import type { Schema } from '../../../amplify/data/resource';
 
 type Materia = Schema['Materia']['type'];
@@ -164,7 +164,8 @@ export class MateriaService {
 
     const card = await this.obtenerCard(cardId);
     const adjuntoKey = result.path ?? key;
-    const adjuntos = [...(card?.adjuntos ?? []), adjuntoKey];
+    const existentes = (card?.adjuntos ?? []).filter((a): a is string => typeof a === 'string' && a.length > 0);
+    const adjuntos = [...existentes, adjuntoKey];
 
     const { errors } = await client.models.Card.update({
       id: cardId,
@@ -178,6 +179,22 @@ export class MateriaService {
   async obtenerUrlAdjunto(key: string): Promise<string> {
     const { url } = await getUrl({ path: key });
     return url.toString();
+  }
+
+  async eliminarAdjunto(cardId: string, key: string): Promise<void> {
+    const card = await this.obtenerCard(cardId);
+    if (!card) return;
+    const restantes = (card.adjuntos ?? []).filter((a): a is string => typeof a === 'string' && a !== key);
+    const { errors } = await client.models.Card.update({
+      id: cardId,
+      adjuntos: restantes,
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    try {
+      await remove({ path: key });
+    } catch (e) {
+      console.warn('No se pudo borrar el archivo de S3:', e);
+    }
   }
 
   async listarEvaluacionesDeGrupo(grupoId: string): Promise<EvaluacionPar[]> {
@@ -309,6 +326,7 @@ export class MateriaService {
       completadaEn: number | null;
       puntuacion: number;
       comentarioProfesor: string;
+      adjuntos: string[];
     }>,
   ) {
     const { data, errors } = await client.models.Card.update({

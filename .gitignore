@@ -46,3 +46,7 @@ Thumbs.db
 # Credentials & secrets
 *.csv
 
+# Amplify local build artifacts
+/.amplify
+
+

@@ -368,6 +368,12 @@ export class GrupoDetalle implements OnInit {
   mostrarConfirmarSalir = signal(false);
   mostrarConfirmarEliminarGrupo = signal(false);
 
+  // Adjuntos & Detalle de card
+  adjuntosUrls = signal<Record<string, string>>({});
+  subiendoAdjuntoCardId = signal<string | null>(null);
+  cardDetalle = signal<Card | null>(null);
+  cargandoUrlsDetalle = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -411,11 +417,39 @@ export class GrupoDetalle implements OnInit {
     return [...cards].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
   }
 
+  private async cargarUrlsAdjuntos(cards: Card[]) {
+    const todasLasKeys = new Set<string>();
+    for (const card of cards) {
+      for (const key of card.adjuntos ?? []) {
+        if (key) todasLasKeys.add(key);
+      }
+    }
+    const urlsActuales = { ...this.adjuntosUrls() };
+    let cambios = false;
+    await Promise.all(
+      Array.from(todasLasKeys).map(async (key) => {
+        if (!urlsActuales[key]) {
+          try {
+            const url = await this.materiaService.obtenerUrlAdjunto(key);
+            urlsActuales[key] = url;
+            cambios = true;
+          } catch (e) {
+            console.warn('No se pudo precargar URL para', key, e);
+          }
+        }
+      }),
+    );
+    if (cambios) {
+      this.adjuntosUrls.set(urlsActuales);
+    }
+  }
+
   private async recargarCards() {
     const g = this.grupo();
     if (!g) return;
     const cards = await this.materiaService.listarCardsDeGrupo(g.id);
     this.todasLasCards.set(cards);
+    await this.cargarUrlsAdjuntos(cards);
   }
 
   private async recargarLogs() {
@@ -804,6 +838,8 @@ export class GrupoDetalle implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
+    this.subiendoAdjuntoCardId.set(card.id);
+    this.error.set(null);
     try {
       const key = await this.materiaService.subirAdjunto(card.id, file);
       await this.materiaService.registrarLog(
@@ -814,11 +850,18 @@ export class GrupoDetalle implements OnInit {
         card.id,
       );
       await this.recargarCards();
-      this.error.set(null);
-      input.value = '';
-      await this.abrirAdjunto(key);
+      if (this.cardDetalle()?.id === card.id) {
+        const refreshed = this.todasLasCards().find((c) => c.id === card.id);
+        if (refreshed) this.cardDetalle.set(refreshed);
+      }
+      try {
+        const url = await this.materiaService.obtenerUrlAdjunto(key);
+        this.adjuntosUrls.update((urls) => ({ ...urls, [key]: url }));
+      } catch {}
     } catch (e: any) {
       this.error.set(e.message ?? 'No se pudo adjuntar el archivo');
+    } finally {
+      this.subiendoAdjuntoCardId.set(null);
       input.value = '';
     }
   }
@@ -827,18 +870,105 @@ export class GrupoDetalle implements OnInit {
     input?.click();
   }
 
+  esImagen(key: string): boolean {
+    if (!key) return false;
+    const ext = key.split('.').pop()?.toLowerCase();
+    return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'bmp'].includes(ext ?? '');
+  }
+
+  esPdf(key: string): boolean {
+    if (!key) return false;
+    return key.toLowerCase().endsWith('.pdf');
+  }
+
+  nombreAdjunto(key: string): string {
+    if (!key) return 'archivo';
+    const base = key.split('/').pop() || 'archivo';
+    return base.replace(/^\d+-/, '');
+  }
+
+  iconoAdjunto(key: string): string {
+    if (this.esImagen(key)) return '🖼️';
+    if (this.esPdf(key)) return '📕';
+    const ext = key.split('.').pop()?.toLowerCase();
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext ?? '')) return '📦';
+    if (['doc', 'docx', 'txt', 'md', 'rtf'].includes(ext ?? '')) return '📝';
+    if (['xls', 'xlsx', 'csv'].includes(ext ?? '')) return '📊';
+    return '📎';
+  }
+
+  primerImagenAdjunta(card: Card): string | null {
+    const adjuntos = card.adjuntos ?? [];
+    for (const key of adjuntos) {
+      if (key && this.esImagen(key) && this.adjuntosUrls()[key]) {
+        return key;
+      }
+    }
+    return null;
+  }
+
+  async abrirDetalleCard(card: Card) {
+    this.cardDetalle.set(card);
+    if (card.adjuntos?.length) {
+      this.cargandoUrlsDetalle.set(true);
+      try {
+        await this.cargarUrlsAdjuntos([card]);
+      } finally {
+        this.cargandoUrlsDetalle.set(false);
+      }
+    }
+  }
+
+  cerrarDetalleCard() {
+    this.cardDetalle.set(null);
+  }
+
+  estadoLabel(estado: string | null | undefined): string {
+    const map: Record<string, string> = {
+      backlog: 'Backlog',
+      progreso: 'En progreso',
+      revision: 'Revisión',
+      hecho: 'Hecho',
+    };
+    return estado ? (map[estado] ?? estado) : '';
+  }
+
   async abrirAdjunto(key: string) {
     if (!key) return;
     try {
-      const url = await this.materiaService.obtenerUrlAdjunto(key);
+      let url = this.adjuntosUrls()[key];
+      if (!url) {
+        url = await this.materiaService.obtenerUrlAdjunto(key);
+        this.adjuntosUrls.update((u) => ({ ...u, [key]: url }));
+      }
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (e: any) {
       this.error.set(e.message ?? 'No se pudo abrir el archivo');
     }
   }
 
-  nombreAdjunto(key: string): string {
-    return (key || '').split('/').pop() || 'archivo';
+  async eliminarAdjunto(card: Card, key: string, event?: Event) {
+    event?.stopPropagation();
+    if (!confirm(`¿Eliminar el adjunto "${this.nombreAdjunto(key)}"?`)) return;
+    try {
+      await this.materiaService.eliminarAdjunto(card.id, key);
+      await this.materiaService.registrarLog(
+        card.grupoId,
+        this.userId()!,
+        'eliminar_adjunto',
+        'Card',
+        card.id,
+      );
+      await this.recargarCards();
+      await this.recargarLogs();
+      // Refrescar cardDetalle si sigue abierto
+      if (this.cardDetalle()?.id === card.id) {
+        const refreshed = this.todasLasCards().find(c => c.id === card.id);
+        if (refreshed) this.cardDetalle.set(refreshed);
+      }
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al eliminar el adjunto');
+    }
   }
 
   // ==== Puntuar (profesor) ====

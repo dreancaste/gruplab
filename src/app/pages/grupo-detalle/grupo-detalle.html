@@ -37,30 +37,20 @@
       </div>
     </header>
 
+    <!-- PARTICIPACIÓN DEL EQUIPO — solo porcentajes -->
     <section class="metricas-aporte" aria-labelledby="titulo-metricas">
       <div class="metricas-cabecera">
-        <div>
-          <h2 id="titulo-metricas">Participación del equipo</h2>
-          <p>Estimación equilibrada a partir de entregas, puntualidad, colaboración y evaluación entre pares.</p>
-        </div>
-        <span class="total-puntos" *ngIf="formulaParticipacion()">Modelo mixto</span>
+        <h2 id="titulo-metricas">Participación del equipo</h2>
       </div>
       <p class="sin-aportes" *ngIf="!formulaParticipacion()">
         Todavía no hay entregas registradas para calcular la participación.
-      </p>
-      <p class="metrica-formula" *ngIf="formulaParticipacion() as pesos">
-        Pesos aplicados según los datos disponibles:
-        Esfuerzo {{ pesos.esfuerzo | number:'1.0-0' }}% ·
-        Puntualidad {{ pesos.puntualidad | number:'1.0-0' }}% ·
-        Calidad/colaboración {{ pesos.calidadColaboracion | number:'1.0-0' }}% ·
-        Pares {{ pesos.pares | number:'1.0-0' }}%.
       </p>
       <div class="aporte-lista" *ngIf="formulaParticipacion()">
         <article class="aporte-integrante" *ngFor="let metricas of metricasParticipacion()">
           <div class="aporte-nombre">
             <strong>{{ metricas.usuarioId === userId() ? 'Vos' : metricas.usuarioId }}</strong>
-            <span>
-              {{ metricas.participacion === null ? 'Sin datos suficientes' : (metricas.participacion | number:'1.0-1') + '%' }}
+            <span class="aporte-pct">
+              {{ metricas.participacion === null ? '—' : (metricas.participacion | number:'1.0-1') + '%' }}
             </span>
           </div>
           <div
@@ -68,27 +58,12 @@
             role="progressbar"
             [attr.aria-valuenow]="metricas.participacion ?? 0"
             [attr.aria-valuemax]="100"
-            aria-label="Porcentaje de puntos de aporte"
+            aria-label="Porcentaje de participación"
           >
             <span [style.width.%]="metricas.participacion ?? 0"></span>
           </div>
-          <p class="aporte-detalle">
-            Esfuerzo {{ metricas.esfuerzo === null ? '—' : (metricas.esfuerzo | number:'1.0-0') + '%' }}
-            · Puntualidad {{ metricas.puntualidad === null ? '—' : (metricas.puntualidad | number:'1.0-0') + '%' }}
-            · Calidad {{ metricas.calidad === null ? '—' : (metricas.calidad | number:'1.0-0') + '%' }}
-            · Revisiones {{ metricas.colaboracion === null ? '—' : (metricas.colaboracion | number:'1.0-0') + '%' }}
-            · Pares {{ metricas.evaluacionPares === null ? '—' : (metricas.evaluacionPares | number:'1.0-0') + '%' }}
-          </p>
-          <p class="evaluaciones-recibidas">
-            Evaluaciones de pares recibidas: {{ metricas.evaluacionesRecibidas }}
-          </p>
         </article>
       </div>
-      <p class="metricas-nota">
-        50% tareas completadas según esfuerzo · 20% puntualidad · 15% calidad y revisiones · 15% pares.
-        Si falta un tipo de dato, los pesos disponibles se redistribuyen para sumar 100%.
-        Es una señal para conversar, no una calificación automática.
-      </p>
     </section>
 
     <!-- KANBAN -->
@@ -105,7 +80,7 @@
           id="backlog"
         >
           <div class="card" *ngFor="let card of backlog()" cdkDrag>
-            <div class="card-body">
+            <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
@@ -115,15 +90,10 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
-              <div class="adjuntos" *ngIf="card.adjuntos?.length">
-                <button
-                  *ngFor="let key of card.adjuntos"
-                  class="btn-adjunto"
-                  type="button"
-                  (click)="abrirAdjunto(key || '')"
-                >
-                  📎 {{ nombreAdjunto(key || '') }}
-                </button>
+              <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
+                <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
+                  {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
+                </span>
               </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
@@ -131,21 +101,21 @@
             </div>
             <div class="card-acciones">
               <input #backlogInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(backlogInput)" title="Adjuntar archivo">
+              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(backlogInput)" title="Adjuntar archivo">
                 📎
               </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
-                (click)="abrirPuntuar(card)"
+                (click)="$event.stopPropagation(); abrirPuntuar(card)"
                 title="Puntuar"
               >
                 ⭐
               </button>
-              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
                 ✏️
               </button>
-              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -165,7 +135,7 @@
           id="progreso"
         >
           <div class="card" *ngFor="let card of progreso()" cdkDrag>
-            <div class="card-body">
+            <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
@@ -175,15 +145,10 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
-              <div class="adjuntos" *ngIf="card.adjuntos?.length">
-                <button
-                  *ngFor="let key of card.adjuntos"
-                  class="btn-adjunto"
-                  type="button"
-                  (click)="abrirAdjunto(key || '')"
-                >
-                  📎 {{ nombreAdjunto(key || '') }}
-                </button>
+              <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
+                <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
+                  {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
+                </span>
               </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
@@ -191,21 +156,21 @@
             </div>
             <div class="card-acciones">
               <input #progresoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(progresoInput)" title="Adjuntar archivo">
+              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(progresoInput)" title="Adjuntar archivo">
                 📎
               </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
-                (click)="abrirPuntuar(card)"
+                (click)="$event.stopPropagation(); abrirPuntuar(card)"
                 title="Puntuar"
               >
                 ⭐
               </button>
-              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
                 ✏️
               </button>
-              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -225,7 +190,7 @@
           id="revision"
         >
           <div class="card" *ngFor="let card of revision()" cdkDrag>
-            <div class="card-body">
+            <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
@@ -241,15 +206,10 @@
               <p class="card-detalles" *ngIf="!card.revisadaPor">
                 Pendiente de revisión independiente
               </p>
-              <div class="adjuntos" *ngIf="card.adjuntos?.length">
-                <button
-                  *ngFor="let key of card.adjuntos"
-                  class="btn-adjunto"
-                  type="button"
-                  (click)="abrirAdjunto(key || '')"
-                >
-                  📎 {{ nombreAdjunto(key || '') }}
-                </button>
+              <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
+                <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
+                  {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
+                </span>
               </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
@@ -257,13 +217,13 @@
             </div>
             <div class="card-acciones">
               <input #revisionInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(revisionInput)" title="Adjuntar archivo">
+              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(revisionInput)" title="Adjuntar archivo">
                 📎
               </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
-                (click)="abrirPuntuar(card)"
+                (click)="$event.stopPropagation(); abrirPuntuar(card)"
                 title="Puntuar"
               >
                 ⭐
@@ -271,15 +231,15 @@
               <button
                 class="btn-mini"
                 *ngIf="puedeRevisar(card)"
-                (click)="marcarRevisada(card)"
+                (click)="$event.stopPropagation(); marcarRevisada(card)"
                 title="Registrar revisión de un integrante"
               >
                 🔎
               </button>
-              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
                 ✏️
               </button>
-              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -299,7 +259,7 @@
           id="hecho"
         >
           <div class="card" *ngFor="let card of hecho()" cdkDrag>
-            <div class="card-body">
+            <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
               <p class="card-desc" *ngIf="card.descripcion">
                 {{ card.descripcion }}
@@ -309,15 +269,10 @@
                 · {{ card.asignados?.join(', ') || 'Sin asignar' }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
-              <div class="adjuntos" *ngIf="card.adjuntos?.length">
-                <button
-                  *ngFor="let key of card.adjuntos"
-                  class="btn-adjunto"
-                  type="button"
-                  (click)="abrirAdjunto(key || '')"
-                >
-                  📎 {{ nombreAdjunto(key || '') }}
-                </button>
+              <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
+                <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
+                  {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
+                </span>
               </div>
               <p *ngIf="card.puntuacion" class="puntaje">
                 ⭐ {{ card.puntuacion }}/10
@@ -325,27 +280,27 @@
             </div>
             <div class="card-acciones">
               <input #hechoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="abrirSelectorArchivo(hechoInput)" title="Adjuntar archivo">
+              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(hechoInput)" title="Adjuntar archivo">
                 📎
               </button>
               <button
                 class="btn-mini"
                 *ngIf="esDocente()"
-                (click)="abrirPuntuar(card)"
+                (click)="$event.stopPropagation(); abrirPuntuar(card)"
                 title="Puntuar"
               >
                 ⭐
               </button>
-              <button class="btn-mini" (click)="abrirEditarCard(card)" title="Editar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
                 ✏️
               </button>
-              <button class="btn-mini" (click)="eliminarCard(card)" title="Eliminar">
+              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
                 🗑️
               </button>
               <button
                 class="btn-mini"
                 *ngIf="evaluadosPendientes(card).length"
-                (click)="abrirEvaluacion(card)"
+                (click)="$event.stopPropagation(); abrirEvaluacion(card)"
                 title="Evaluar pares para esta tarea"
               >
                 🤝
@@ -370,6 +325,123 @@
       </button>
     </div>
   </ng-container>
+</div>
+
+<!-- MODAL DETALLE DE CARD -->
+<div class="modal-backdrop" *ngIf="cardDetalle()" (click)="cerrarDetalleCard()">
+  <div class="modal modal-detalle" (click)="$event.stopPropagation()">
+    <button class="modal-cerrar" (click)="cerrarDetalleCard()">✕</button>
+    <div class="detalle-cabecera">
+      <h3>{{ cardDetalle()!.titulo }}</h3>
+      <span class="detalle-estado badge-{{ cardDetalle()!.estado }}">
+        {{ estadoLabel(cardDetalle()!.estado) }}
+      </span>
+    </div>
+
+    <p class="detalle-desc" *ngIf="cardDetalle()!.descripcion">
+      {{ cardDetalle()!.descripcion }}
+    </p>
+
+    <div class="detalle-meta">
+      <div>
+        <span class="meta-label">Esfuerzo</span>
+        <span>{{ cardDetalle()!.pesoEsfuerzo ?? 1 }} punto{{ (cardDetalle()!.pesoEsfuerzo ?? 1) === 1 ? '' : 's' }}</span>
+      </div>
+      <div>
+        <span class="meta-label">Asignados</span>
+        <span>{{ cardDetalle()!.asignados?.join(', ') || 'Sin asignar' }}</span>
+      </div>
+      <div *ngIf="cardDetalle()!.fechaLimite">
+        <span class="meta-label">Fecha límite</span>
+        <span>{{ cardDetalle()!.fechaLimite }}</span>
+      </div>
+      <div *ngIf="cardDetalle()!.puntuacion">
+        <span class="meta-label">Puntuación</span>
+        <span>⭐ {{ cardDetalle()!.puntuacion }}/10</span>
+      </div>
+      <div *ngIf="cardDetalle()!.comentarioProfesor">
+        <span class="meta-label">Comentario del docente</span>
+        <span>{{ cardDetalle()!.comentarioProfesor }}</span>
+      </div>
+    </div>
+
+    <!-- ADJUNTOS CON VISTA PREVIA -->
+    <div class="detalle-adjuntos" *ngIf="cardDetalle()!.adjuntos?.length">
+      <h4>Adjuntos ({{ cardDetalle()!.adjuntos!.length }})</h4>
+
+      <div *ngIf="cargandoUrlsDetalle()" class="cargando-adjuntos">Cargando adjuntos…</div>
+
+      <div class="adjuntos-grid" *ngIf="!cargandoUrlsDetalle()">
+        <div
+          *ngFor="let key of cardDetalle()!.adjuntos"
+          class="adjunto-item"
+        >
+          <!-- Vista previa imagen -->
+          <ng-container *ngIf="esImagen(key || '') && adjuntosUrls()[key || '']">
+            <img
+              [src]="adjuntosUrls()[key || '']"
+              [alt]="nombreAdjunto(key || '')"
+              class="adjunto-preview-img"
+              (click)="abrirAdjunto(key || '')"
+              title="Click para abrir en tamaño completo"
+            />
+          </ng-container>
+
+          <!-- Placeholder imagen cargando -->
+          <ng-container *ngIf="esImagen(key || '') && !adjuntosUrls()[key || '']">
+            <div class="adjunto-preview-placeholder">🖼️</div>
+          </ng-container>
+
+          <!-- Icono para no-imágenes -->
+          <ng-container *ngIf="!esImagen(key || '')">
+            <div
+              class="adjunto-icono"
+              (click)="abrirAdjunto(key || '')"
+              title="Descargar / abrir"
+            >
+              {{ iconoAdjunto(key || '') }}
+            </div>
+          </ng-container>
+
+          <div class="adjunto-info">
+            <span class="adjunto-nombre" (click)="abrirAdjunto(key || '')" title="Abrir archivo">
+              {{ nombreAdjunto(key || '') }}
+            </span>
+            <button
+              class="btn-mini btn-eliminar-adjunto"
+              *ngIf="!esDocente()"
+              (click)="eliminarAdjunto(cardDetalle()!, key || '', $event)"
+              title="Eliminar adjunto"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detalle-acciones">
+      <input #detalleInput type="file" style="display:none" (change)="subirArchivo(cardDetalle()!, $event)" />
+      <button
+        class="btn-secundario"
+        *ngIf="!esDocente()"
+        (click)="abrirSelectorArchivo(detalleInput)"
+        [disabled]="subiendoAdjuntoCardId() === cardDetalle()!.id"
+      >
+        {{ subiendoAdjuntoCardId() === cardDetalle()!.id ? 'Subiendo…' : '📎 Adjuntar archivo' }}
+      </button>
+      <button class="btn-secundario" (click)="abrirEditarCard(cardDetalle()!); cerrarDetalleCard()">
+        ✏️ Editar
+      </button>
+      <button
+        class="btn-secundario"
+        *ngIf="esDocente()"
+        (click)="abrirPuntuar(cardDetalle()!); cerrarDetalleCard()"
+      >
+        ⭐ Puntuar
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL CREAR/EDITAR CARD -->

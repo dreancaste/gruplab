@@ -230,7 +230,7 @@ describe('GrupoDetalle', () => {
   });
 
   it('extracts filename from attachment key correctly', () => {
-    expect(component.nombreAdjunto('cards/123/1729000000-tp1.pdf')).toBe('1729000000-tp1.pdf');
+    expect(component.nombreAdjunto('cards/123/1729000000-tp1.pdf')).toBe('tp1.pdf');
     expect(component.nombreAdjunto('')).toBe('archivo');
   });
 });

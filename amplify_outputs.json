@@ -771,5 +771,26 @@
       "nonModels": {}
     }
   },
+  "storage": {
+    "aws_region": "sa-east-1",
+    "bucket_name": "amplify-gruplab-lucia-san-gruplabstoragebucket241a-vwzakrxm0r9u",
+    "buckets": [
+      {
+        "name": "gruplabStorage",
+        "bucket_name": "amplify-gruplab-lucia-san-gruplabstoragebucket241a-vwzakrxm0r9u",
+        "aws_region": "sa-east-1",
+        "paths": {
+          "cards/*": {
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          }
+        }
+      }
+    ]
+  },
   "version": "1.5"
 }
