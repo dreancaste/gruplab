@@ -331,6 +331,9 @@ export class AulaDetalle implements OnInit {
   // ==== Ver grupo ====
 
   abrirGrupo(grupoId: string) {
+    if (!this.esDocente && this.miGrupo()?.id !== grupoId) {
+      return;
+    }
     this.router.navigate(['/grupo', grupoId]);
   }
 

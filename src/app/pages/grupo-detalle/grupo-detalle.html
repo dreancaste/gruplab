@@ -636,6 +636,9 @@
     <ng-container *ngIf="!esTableroIndependiente">
       <div class="integrantes-lista">
         <p class="titulo-lista">Compañeros disponibles en esta aula:</p>
+        <p *ngIf="!esDocente()" class="ayuda">
+          Podés sumar compañeros disponibles. Solo los docentes pueden eliminar integrantes del grupo.
+        </p>
         <p *ngIf="alumnosAgregables().length === 0" class="ayuda">
           No hay otros compañeros disponibles. O ya están en otros grupos, o
           todavía no hay más alumnos en el aula.
@@ -648,6 +651,7 @@
           <input
             type="checkbox"
             [checked]="estaSeleccionado(alumnoId)"
+            [disabled]="bloqueadoParaQuitar(alumnoId)"
             (change)="toggleIntegrante(alumnoId)"
           />
           <span class="alumno-id">{{ alumnoId }}</span>

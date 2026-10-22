@@ -311,11 +311,11 @@ export class GrupoDetalle implements OnInit {
     this.ordenar(this.todasLasCards().filter((c) => c.estado === 'hecho'))
   );
 
-  // Admin del grupo
+  // Admin del grupo (el creador del grupo o cualquier docente del aula)
   esAdminDelGrupo = computed(() => {
     const g = this.grupo();
     const uid = this.userId();
-    return !!g && !!uid && g.adminId === uid;
+    return (!!g && !!uid && g.adminId === uid) || this.esDocente();
   });
   puedeRevisar = (card: Card): boolean => {
     const usuarioId = this.userId();
@@ -393,12 +393,19 @@ export class GrupoDetalle implements OnInit {
       if (!grupo) throw new Error('Grupo no encontrado');
       this.grupo.set(grupo);
 
-      // Determinar rol
+      // Determinar rol y validar acceso
       if (grupo.materiaId) {
         const materia = await this.materiaService.obtenerMateria(grupo.materiaId);
         if (!materia) throw new Error('Materia no encontrada');
         const rol = this.materiaService.obtenerRol(materia, userId);
-        this.esDocente.set(rol === 'admin' || rol === 'profesor');
+        const docente = rol === 'admin' || rol === 'profesor';
+        this.esDocente.set(docente);
+
+        const perteneceAlGrupo = (grupo.integrantes ?? []).includes(userId);
+        if (!docente && !perteneceAlGrupo) {
+          this.router.navigate(['/aula', grupo.materiaId]);
+          return;
+        }
       } else {
         this.esDocente.set(false);
       }
@@ -1064,7 +1071,7 @@ export class GrupoDetalle implements OnInit {
       if (!materia) throw new Error('Materia no encontrada');
 
       const alumnos = (materia.alumnos ?? []).filter(
-        (a): a is string => !!a && a !== g.adminId
+        (a): a is string => !!a && (this.esDocente() || a !== g.adminId)
       );
 
       const ocupados = await this.materiaService.alumnosEnOtroGrupo(
@@ -1077,7 +1084,7 @@ export class GrupoDetalle implements OnInit {
       this.alumnosAgregables.set(alumnos.filter((a) => !ocupadosSet.has(a)));
       this.integrantesSeleccionados.set(
         (g.integrantes ?? []).filter(
-          (i): i is string => !!i && i !== g.adminId
+          (i): i is string => !!i && (this.esDocente() || i !== g.adminId)
         )
       );
       this.mostrarModalIntegrantes.set(true);
@@ -1092,9 +1099,19 @@ export class GrupoDetalle implements OnInit {
     this.integrantesSeleccionados.set([]);
   }
 
+  yaEsIntegranteActual(id: string): boolean {
+    return (this.grupo()?.integrantes ?? []).includes(id);
+  }
+
+  bloqueadoParaQuitar(id: string): boolean {
+    // Como alumno admin del grupo, no puede eliminar integrantes existentes
+    return !this.esDocente() && this.yaEsIntegranteActual(id);
+  }
+
   toggleIntegrante(id: string) {
     const actuales = this.integrantesSeleccionados();
     if (actuales.includes(id)) {
+      if (this.bloqueadoParaQuitar(id)) return;
       this.integrantesSeleccionados.set(actuales.filter((u) => u !== id));
     } else {
       this.integrantesSeleccionados.set([...actuales, id]);
@@ -1109,7 +1126,13 @@ export class GrupoDetalle implements OnInit {
     const g = this.grupo();
     if (!g) return;
     try {
-      const integrantes = [g.adminId, ...this.integrantesSeleccionados()];
+      let integrantes: string[];
+      if (this.esDocente()) {
+        integrantes = [...new Set(this.integrantesSeleccionados())];
+      } else {
+        const actuales = (g.integrantes ?? []).filter((i): i is string => !!i);
+        integrantes = [...new Set([g.adminId, ...actuales, ...this.integrantesSeleccionados()])];
+      }
       const actualizado = await this.materiaService.actualizarGrupo(g.id, {
         integrantes,
       });
