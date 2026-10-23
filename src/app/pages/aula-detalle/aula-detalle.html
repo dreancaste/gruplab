@@ -401,3 +401,26 @@
     </div>
   </div>
 </div>
+
+
+<!-- CONFIRMAR QUITAR ALUMNO DEL AULA -->
+<div
+  class="modal-backdrop"
+  *ngIf="alumnoAQuitarDelAula()"
+  (click)="cancelarQuitarAlumnoDelAula()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>⚠️ Quitar alumno del aula</h3>
+    <p>
+      ¿Seguro que querés dar de baja a
+      <strong>{{ nombreUsuario(alumnoAQuitarDelAula()) }}</strong> de esta aula?
+      También se lo quitará de su grupo actual.
+    </p>
+    <div class="modal-acciones">
+      <button (click)="cancelarQuitarAlumnoDelAula()">Cancelar</button>
+      <button class="btn-peligro" (click)="confirmarQuitarAlumnoDelAula()">
+        Quitar del aula
+      </button>
+    </div>
+  </div>
+</div>

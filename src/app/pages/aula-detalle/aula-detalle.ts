@@ -52,6 +52,7 @@ export class AulaDetalle implements OnInit {
   // Modal confirmar eliminar
   mostrarConfirmarEliminar = signal(false);
   grupoAEliminar = signal<Grupo | null>(null);
+  alumnoAQuitarDelAula = signal<string | null>(null);
 
   // Modal crear grupo (alumno)
   mostrarCrearGrupoAlumno = signal(false);
@@ -301,12 +302,19 @@ export class AulaDetalle implements OnInit {
     }
   }
 
-  async quitarAlumnoDelAula(alumnoId: string) {
+  quitarAlumnoDelAula(alumnoId: string) {
+    this.alumnoAQuitarDelAula.set(alumnoId);
+  }
+
+  cancelarQuitarAlumnoDelAula() {
+    this.alumnoAQuitarDelAula.set(null);
+  }
+
+  async confirmarQuitarAlumnoDelAula() {
     const m = this.materia();
-    if (!m) return;
-    if (!confirm(`¿Seguro que querés dar de baja a ${this.nombreUsuario(alumnoId)} de esta aula?`)) {
-      return;
-    }
+    const alumnoId = this.alumnoAQuitarDelAula();
+    if (!m || !alumnoId) return;
+    this.alumnoAQuitarDelAula.set(null);
     try {
       const actualizada = await this.materiaService.eliminarAlumnoDeMateria(m.id, alumnoId);
       this.materia.set(actualizada);

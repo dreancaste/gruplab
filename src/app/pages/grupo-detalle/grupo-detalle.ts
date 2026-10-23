@@ -381,6 +381,32 @@ export class GrupoDetalle implements OnInit {
   // Confirmaciones
   mostrarConfirmarSalir = signal(false);
   mostrarConfirmarEliminarGrupo = signal(false);
+  confirmacionPendiente = signal<{
+    titulo: string;
+    mensaje: string;
+    textoBoton: string;
+    ejecutar: () => Promise<void>;
+  } | null>(null);
+
+  solicitarConfirmacion(
+    titulo: string,
+    mensaje: string,
+    textoBoton: string,
+    ejecutar: () => Promise<void>,
+  ) {
+    this.confirmacionPendiente.set({ titulo, mensaje, textoBoton, ejecutar });
+  }
+
+  cerrarConfirmacionPendiente() {
+    this.confirmacionPendiente.set(null);
+  }
+
+  async confirmarAccionPendiente() {
+    const actual = this.confirmacionPendiente();
+    if (!actual) return;
+    this.confirmacionPendiente.set(null);
+    await actual.ejecutar();
+  }
 
   // Adjuntos & Detalle de card
   adjuntosUrls = signal<Record<string, string>>({});
@@ -858,25 +884,30 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
-  async eliminarCard(card: Card) {
+  eliminarCard(card: Card) {
     const g = this.grupo();
     if (!g) return;
-    if (!confirm(`¿Eliminar la card "${card.titulo}"?`)) return;
-
-    try {
-      await this.materiaService.eliminarCard(card.id);
-      await this.materiaService.registrarLog(
-        g.id,
-        this.userId()!,
-        'eliminar_card',
-        'Card',
-        card.id
-      );
-      await this.recargarCards();
-      await this.recargarLogs();
-    } catch (e: any) {
-      this.error.set(e.message ?? 'Error al eliminar la card');
-    }
+    this.solicitarConfirmacion(
+      'Eliminar tarea',
+      `¿Seguro que querés eliminar la tarea "${card.titulo}"? Esta acción no se puede deshacer.`,
+      'Eliminar tarea',
+      async () => {
+        try {
+          await this.materiaService.eliminarCard(card.id);
+          await this.materiaService.registrarLog(
+            g.id,
+            this.userId()!,
+            'eliminar_card',
+            'Card',
+            card.id
+          );
+          await this.recargarCards();
+          await this.recargarLogs();
+        } catch (e: any) {
+          this.error.set(e.message ?? 'Error al eliminar la card');
+        }
+      },
+    );
   }
 
   async subirArchivo(card: Card, event: Event) {
@@ -993,28 +1024,33 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
-  async eliminarAdjunto(card: Card, key: string, event?: Event) {
+  eliminarAdjunto(card: Card, key: string, event?: Event) {
     event?.stopPropagation();
-    if (!confirm(`¿Eliminar el adjunto "${this.nombreAdjunto(key)}"?`)) return;
-    try {
-      await this.materiaService.eliminarAdjunto(card.id, key);
-      await this.materiaService.registrarLog(
-        card.grupoId,
-        this.userId()!,
-        'eliminar_adjunto',
-        'Card',
-        card.id,
-      );
-      await this.recargarCards();
-      await this.recargarLogs();
-      // Refrescar cardDetalle si sigue abierto
-      if (this.cardDetalle()?.id === card.id) {
-        const refreshed = this.todasLasCards().find(c => c.id === card.id);
-        if (refreshed) this.cardDetalle.set(refreshed);
-      }
-    } catch (e: any) {
-      this.error.set(e.message ?? 'Error al eliminar el adjunto');
-    }
+    this.solicitarConfirmacion(
+      'Eliminar adjunto',
+      `¿Seguro que querés eliminar el archivo "${this.nombreAdjunto(key)}"?`,
+      'Eliminar archivo',
+      async () => {
+        try {
+          await this.materiaService.eliminarAdjunto(card.id, key);
+          await this.materiaService.registrarLog(
+            card.grupoId,
+            this.userId()!,
+            'eliminar_adjunto',
+            'Card',
+            card.id,
+          );
+          await this.recargarCards();
+          await this.recargarLogs();
+          if (this.cardDetalle()?.id === card.id) {
+            const refreshed = this.todasLasCards().find((c) => c.id === card.id);
+            if (refreshed) this.cardDetalle.set(refreshed);
+          }
+        } catch (e: any) {
+          this.error.set(e.message ?? 'Error al eliminar el adjunto');
+        }
+      },
+    );
   }
 
   // ==== Seguimiento de tareas (profesor) & Calificación de grupo ====
@@ -1275,26 +1311,32 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
-  async eliminarIntegranteDirecto(alumnoId: string) {
+  eliminarIntegranteDirecto(alumnoId: string) {
     const g = this.grupo();
     if (!g || !alumnoId || !this.esDocente()) return;
-    if (!confirm(`¿Quitar a "${this.nombreUsuario(alumnoId)}" del grupo?`)) return;
-    this.error.set(null);
-    try {
-      const actualizado = await this.materiaService.eliminarIntegranteDeGrupo(g.id, alumnoId);
-      this.grupo.set(actualizado);
-      await this.materiaService.registrarLog(
-        g.id,
-        this.userId()!,
-        'editar_integrantes',
-        'Grupo',
-        g.id,
-      );
-      await this.recargarLogs();
-      await this.abrirGestionarIntegrantes();
-    } catch (e: any) {
-      this.error.set(e.message ?? 'Error al eliminar integrante');
-    }
+    this.solicitarConfirmacion(
+      'Quitar integrante del grupo',
+      `¿Seguro que querés quitar a "${this.nombreUsuario(alumnoId)}" de este grupo?`,
+      'Quitar del grupo',
+      async () => {
+        this.error.set(null);
+        try {
+          const actualizado = await this.materiaService.eliminarIntegranteDeGrupo(g.id, alumnoId);
+          this.grupo.set(actualizado);
+          await this.materiaService.registrarLog(
+            g.id,
+            this.userId()!,
+            'editar_integrantes',
+            'Grupo',
+            g.id,
+          );
+          await this.recargarLogs();
+          await this.abrirGestionarIntegrantes();
+        } catch (e: any) {
+          this.error.set(e.message ?? 'Error al eliminar integrante');
+        }
+      },
+    );
   }
 
   cerrarGestionarIntegrantes() {

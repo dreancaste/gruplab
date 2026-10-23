@@ -945,3 +945,22 @@
     </div>
   </div>
 </div>
+
+
+<!-- MODAL DE CONFIRMACIÓN (reemplaza confirm nativo del navegador) -->
+<div
+  class="modal-backdrop"
+  *ngIf="confirmacionPendiente()"
+  (click)="cerrarConfirmacionPendiente()"
+>
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>⚠️ {{ confirmacionPendiente()!.titulo }}</h3>
+    <p>{{ confirmacionPendiente()!.mensaje }}</p>
+    <div class="modal-acciones">
+      <button (click)="cerrarConfirmacionPendiente()">Cancelar</button>
+      <button class="btn-peligro" (click)="confirmarAccionPendiente()">
+        {{ confirmacionPendiente()!.textoBoton }}
+      </button>
+    </div>
+  </div>
+</div>
