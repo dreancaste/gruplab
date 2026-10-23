@@ -602,6 +602,10 @@
 
     <fieldset class="asignados-selector" [disabled]="cardPlanificacionBloqueada">
       <legend>Asignar a integrantes</legend>
+      <p class="ayuda" *ngIf="integrantesGrupo().length === 0">
+        Este grupo todavía no tiene integrantes. Podés crear la tarea sin asignar
+        y sumar integrantes desde <strong>👥 Integrantes</strong>.
+      </p>
       <label *ngFor="let integranteId of integrantesGrupo()" class="asignado-item">
         <input
           type="checkbox"

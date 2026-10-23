@@ -783,7 +783,10 @@ export class GrupoDetalle implements OnInit {
     this.cardDescripcion = '';
     this.cardPesoEsfuerzo = 1;
     this.cardFechaLimite = '';
-    this.asignadosSeleccionados.set(this.userId() ? [this.userId()!] : []);
+    const uid = this.userId();
+    this.asignadosSeleccionados.set(
+      uid && this.integrantesGrupo().includes(uid) ? [uid] : [],
+    );
     this.mostrarModalCard.set(true);
   }
 
@@ -828,7 +831,7 @@ export class GrupoDetalle implements OnInit {
   async guardarCard() {
     const g = this.grupo();
     if (!g || !this.cardTitulo.trim()) return;
-    if (!this.asignadosSeleccionados().length) {
+    if (!this.asignadosSeleccionados().length && this.integrantesGrupo().length > 0) {
       this.error.set('Asigná la tarea a por lo menos un integrante.');
       return;
     }
