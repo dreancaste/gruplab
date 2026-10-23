@@ -47,6 +47,7 @@ export class AulaDetalle implements OnInit {
 
   // Modal participantes y roles (promover alumnos a profesor)
   mostrarModalParticipantes = signal(false);
+  nuevoAlumnoEmail = '';
 
   // Modal confirmar eliminar
   mostrarConfirmarEliminar = signal(false);
@@ -312,6 +313,71 @@ export class AulaDetalle implements OnInit {
       await this.recargarGrupos();
     } catch (e: any) {
       this.error.set(e.message ?? 'No se pudo eliminar al alumno del aula');
+    }
+  }
+
+  get usuariosSugeridosParaAula(): { id: string; email: string }[] {
+    const enAula = new Set([
+      ...this.adminsAula,
+      ...this.profesoresAula,
+      ...this.alumnosDisponibles,
+    ]);
+    const vistosEmail = new Set<string>();
+    const lista: { id: string; email: string }[] = [];
+    for (const [id, email] of Object.entries(this.usuariosMap())) {
+      if (!enAula.has(id) && !vistosEmail.has(email.toLowerCase())) {
+        vistosEmail.add(email.toLowerCase());
+        lista.push({ id, email });
+      }
+    }
+    return lista;
+  }
+
+  async agregarAlumnoAlAula(identificador?: string) {
+    const m = this.materia();
+    const valor = (identificador ?? this.nuevoAlumnoEmail).trim();
+    if (!m || !valor) return;
+
+    this.error.set(null);
+    try {
+      const actualizada = await this.materiaService.agregarAlumnoAMateria(m.id, valor);
+      this.materia.set(actualizada);
+      this.nuevoAlumnoEmail = '';
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo agregar al integrante al aula');
+    }
+  }
+
+  async asignarAlumnoAGrupoDesdeAula(alumnoId: string, event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const grupoDestinoId = select.value;
+    const m = this.materia();
+    if (!m) return;
+
+    this.error.set(null);
+    try {
+      const actual = this.grupoDeAlumno(alumnoId);
+      if (actual && actual.id !== grupoDestinoId) {
+        await this.materiaService.eliminarIntegranteDeGrupo(actual.id, alumnoId);
+      }
+      if (grupoDestinoId) {
+        await this.materiaService.agregarIntegranteAGrupo(grupoDestinoId, alumnoId);
+      }
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo actualizar el grupo del alumno');
+    }
+  }
+
+  async quitarIntegranteDeGrupoDirecto(grupo: Grupo, alumnoId: string, event?: Event) {
+    event?.stopPropagation();
+    this.error.set(null);
+    try {
+      await this.materiaService.eliminarIntegranteDeGrupo(grupo.id, alumnoId);
+      await this.recargarGrupos();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'No se pudo quitar al integrante del grupo');
     }
   }
 

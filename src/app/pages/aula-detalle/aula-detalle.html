@@ -65,9 +65,21 @@
           <p class="meta">
             {{ g.integrantes?.length ?? 0 }} integrante{{
               (g.integrantes?.length ?? 0) === 1 ? '' : 's'
-            }}:
-            <strong>{{ nombresIntegrantesGrupo(g) }}</strong>
+            }}
           </p>
+          <div class="integrantes-chips-grupo" *ngIf="g.integrantes?.length" (click)="$event.stopPropagation()">
+            <span class="chip-miembro" *ngFor="let miembroId of g.integrantes">
+              {{ nombreUsuario(miembroId) }}
+              <button
+                type="button"
+                class="btn-quitar-chip"
+                title="Eliminar integrante del grupo"
+                (click)="quitarIntegranteDeGrupoDirecto(g, miembroId || '', $event)"
+              >
+                ✕
+              </button>
+            </span>
+          </div>
 
           <!-- Solicitudes pendientes (visible para docente) -->
           <div
@@ -107,25 +119,52 @@
           <h2>🎓 Alumnos inscriptos en el aula ({{ alumnosDisponibles.length }})</h2>
         </div>
 
+        <!-- Formulario para agregar integrante al aula -->
+        <div class="agregar-alumno-box">
+          <div class="agregar-alumno-form">
+            <input
+              [(ngModel)]="nuevoAlumnoEmail"
+              placeholder="Ingresá el email del alumno para agregarlo al aula…"
+              (keyup.enter)="agregarAlumnoAlAula()"
+            />
+            <button class="btn-primario" (click)="agregarAlumnoAlAula()">
+              + Agregar al aula
+            </button>
+          </div>
+          <div class="sugeridos-aula" *ngIf="usuariosSugeridosParaAula.length > 0">
+            <span class="sugeridos-label">Usuarios registrados disponibles:</span>
+            <button
+              type="button"
+              class="btn-sugerido"
+              *ngFor="let u of usuariosSugeridosParaAula"
+              (click)="agregarAlumnoAlAula(u.id)"
+            >
+              + {{ u.email }}
+            </button>
+          </div>
+        </div>
+
         <p *ngIf="alumnosDisponibles.length === 0" class="vacio">
-          Todavía no hay alumnos inscriptos en esta aula. Compartí el código
-          <code>{{ materia()!.codigoInvitacion }}</code> para que se unan.
+          Todavía no hay alumnos inscriptos en esta aula. Podés agregarlos arriba o compartir el código
+          <code>{{ materia()!.codigoInvitacion }}</code>.
         </p>
 
         <div class="tabla-alumnos" *ngIf="alumnosDisponibles.length > 0">
           <div class="fila-alumno-aula" *ngFor="let alumnoId of alumnosDisponibles">
             <div class="alumno-info-principal">
               <strong class="alumno-nombre-email">{{ nombreUsuario(alumnoId) }}</strong>
-              <span
-                class="badge-grupo-actual"
-                [class.sin-grupo-badge]="!grupoDeAlumno(alumnoId)"
-              >
-                {{
-                  grupoDeAlumno(alumnoId)
-                    ? 'Grupo: ' + grupoDeAlumno(alumnoId)!.nombre
-                    : 'Sin grupo asignado'
-                }}
-              </span>
+              <label class="selector-grupo-inline">
+                <span>Grupo:</span>
+                <select
+                  [value]="grupoDeAlumno(alumnoId)?.id || ''"
+                  (change)="asignarAlumnoAGrupoDesdeAula(alumnoId, $event)"
+                >
+                  <option value="">Sin grupo</option>
+                  <option *ngFor="let g of grupos()" [value]="g.id">
+                    {{ g.nombre }}
+                  </option>
+                </select>
+              </label>
             </div>
             <div class="acciones-alumno-aula">
               <button
@@ -145,7 +184,7 @@
                 class="btn-mini btn-quitar-aula"
                 (click)="quitarAlumnoDelAula(alumnoId)"
               >
-                🗑️ Quitar del aula
+                🗑️ Eliminar del aula
               </button>
             </div>
           </div>

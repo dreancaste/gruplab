@@ -660,4 +660,91 @@ export class MateriaService {
     } catch {}
     return { ...this.perfilesCache };
   }
+
+  async agregarAlumnoAMateria(materiaId: string, emailOId: string): Promise<Materia> {
+    const limpio = emailOId.trim().toLowerCase();
+    if (!limpio) throw new Error('Ingresá un email o usuario válido');
+
+    const mapa = await this.obtenerMapaUsuarios();
+    // Buscar si ese email ya corresponde a un userId registrado
+    let targetUserId = emailOId.trim();
+    for (const [uid, mail] of Object.entries(mapa)) {
+      if (mail.toLowerCase() === limpio || uid.toLowerCase() === limpio) {
+        targetUserId = uid;
+        break;
+      }
+    }
+
+    const materia = await this.obtenerMateria(materiaId);
+    if (!materia) throw new Error('Aula no encontrada');
+
+    const yaEnAula =
+      materia.creadorId === targetUserId ||
+      (materia.admins ?? []).includes(targetUserId) ||
+      (materia.profesores ?? []).includes(targetUserId) ||
+      (materia.alumnos ?? []).includes(targetUserId);
+
+    if (yaEnAula) {
+      throw new Error('Este usuario ya forma parte del aula');
+    }
+
+    const alumnosActuales = (materia.alumnos ?? []).filter((id): id is string => !!id);
+    const { data, errors } = await client.models.Materia.update({
+      id: materiaId,
+      alumnos: [...alumnosActuales, targetUserId],
+    });
+    if (errors?.length) throw new Error(errors[0].message);
+    return data!;
+  }
+
+  async agregarIntegranteAGrupo(grupoId: string, alumnoId: string): Promise<Grupo> {
+    const grupo = await this.obtenerGrupo(grupoId);
+    if (!grupo) throw new Error('Grupo no encontrado');
+
+    if (grupo.materiaId) {
+      const ocupados = await this.alumnosEnOtroGrupo(grupo.materiaId, [alumnoId], grupoId);
+      if (ocupados.length > 0) {
+        throw new Error('Este alumno ya pertenece a otro grupo en esta aula');
+      }
+    }
+
+    const actuales = (grupo.integrantes ?? []).filter((i): i is string => !!i);
+    if (actuales.includes(alumnoId)) return grupo;
+
+    return await this.actualizarGrupo(grupoId, {
+      integrantes: [...actuales, alumnoId],
+    });
+  }
+
+  async eliminarIntegranteDeGrupo(grupoId: string, alumnoId: string): Promise<Grupo> {
+    const grupo = await this.obtenerGrupo(grupoId);
+    if (!grupo) throw new Error('Grupo no encontrado');
+
+    const restantes = (grupo.integrantes ?? []).filter(
+      (i): i is string => !!i && i !== alumnoId,
+    );
+    return await this.actualizarGrupo(grupoId, {
+      integrantes: restantes,
+    });
+  }
+
+  // ==== Calificación final de grupo y por integrante ====
+
+  async guardarCalificacionGrupo(
+    grupoId: string,
+    docenteId: string,
+    calificacion: {
+      notaFinal: number | null;
+      comentario?: string;
+      notasIntegrantes: Record<string, number>;
+    },
+  ): Promise<void> {
+    await this.registrarLog(
+      grupoId,
+      docenteId,
+      'calificar_grupo',
+      'CalificacionGrupo',
+      JSON.stringify(calificacion),
+    );
+  }
 }

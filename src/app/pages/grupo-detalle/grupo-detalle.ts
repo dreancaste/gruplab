@@ -349,11 +349,24 @@ export class GrupoDetalle implements OnInit {
   puntuacionComunicacion = 5;
   puntuacionResponsabilidad = 5;
 
-  // Modal puntuar (profesor)
+  // Modal seguimiento de tarea (profesor)
+  readonly opcionesSeguimiento = [
+    'A trabajar',
+    'En buen camino',
+    'Incompleto',
+    'Bien hecho',
+  ] as const;
   mostrarModalPuntuar = signal(false);
   cardAPuntuar = signal<Card | null>(null);
+  seguimientoInput = '';
   puntuacionInput = 0;
   comentarioInput = '';
+
+  // Modal calificar grupo e integrantes (banner de nota final y nota por integrante)
+  mostrarModalCalificarGrupo = signal(false);
+  notaFinalGrupoInput: number | null = 8;
+  comentarioGrupoInput = '';
+  notasIntegrantesInput = signal<Record<string, number>>({});
 
   // Modal editar nombre del grupo
   mostrarModalNombre = signal(false);
@@ -362,6 +375,7 @@ export class GrupoDetalle implements OnInit {
   // Modal gestionar integrantes
   mostrarModalIntegrantes = signal(false);
   alumnosAgregables = signal<string[]>([]);
+  alumnosDisponiblesParaAgregar = signal<string[]>([]);
   integrantesSeleccionados = signal<string[]>([]);
 
   // Confirmaciones
@@ -802,8 +816,10 @@ export class GrupoDetalle implements OnInit {
             ? {
                 pesoEsfuerzo: this.cardPesoEsfuerzo,
                 asignados: this.asignadosSeleccionados(),
-                fechaLimite: this.cardFechaLimite || null,
               }
+            : {}),
+          ...(this.esDocente()
+            ? { fechaLimite: this.cardFechaLimite || null }
             : {}),
         });
         await this.materiaService.registrarLog(
@@ -817,7 +833,9 @@ export class GrupoDetalle implements OnInit {
         const nueva = await this.materiaService.crearCard(g.id, this.cardTitulo.trim(), {
           pesoEsfuerzo: this.cardPesoEsfuerzo,
           asignados: this.asignadosSeleccionados(),
-          ...(this.cardFechaLimite ? { fechaLimite: this.cardFechaLimite } : {}),
+          ...(this.esDocente() && this.cardFechaLimite
+            ? { fechaLimite: this.cardFechaLimite }
+            : {}),
         });
         if (this.cardDescripcion.trim()) {
           await this.materiaService.actualizarCard(nueva.id, {
@@ -999,18 +1017,40 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
-  // ==== Puntuar (profesor) ====
+  // ==== Seguimiento de tareas (profesor) & Calificación de grupo ====
+
+  etiquetaSeguimiento(card: Card | null | undefined): string | null {
+    const raw = card?.comentarioProfesor ?? '';
+    const match = raw.match(/^\[(A trabajar|En buen camino|Incompleto|Bien hecho)\]\s*(.*)$/s);
+    return match ? match[1] : null;
+  }
+
+  comentarioLimpio(card: Card | null | undefined): string {
+    const raw = card?.comentarioProfesor ?? '';
+    const match = raw.match(/^\[(A trabajar|En buen camino|Incompleto|Bien hecho)\]\s*(.*)$/s);
+    return match ? match[2].trim() : raw;
+  }
+
+  claseSeguimiento(etiqueta: string | null): string {
+    if (etiqueta === 'A trabajar') return 'seg-trabajar';
+    if (etiqueta === 'En buen camino') return 'seg-buen-camino';
+    if (etiqueta === 'Incompleto') return 'seg-incompleto';
+    if (etiqueta === 'Bien hecho') return 'seg-bien-hecho';
+    return '';
+  }
 
   abrirPuntuar(card: Card) {
     this.cardAPuntuar.set(card);
+    this.seguimientoInput = this.etiquetaSeguimiento(card) ?? 'En buen camino';
     this.puntuacionInput = card.puntuacion ?? 0;
-    this.comentarioInput = card.comentarioProfesor ?? '';
+    this.comentarioInput = this.comentarioLimpio(card);
     this.mostrarModalPuntuar.set(true);
   }
 
   cerrarPuntuar() {
     this.mostrarModalPuntuar.set(false);
     this.cardAPuntuar.set(null);
+    this.seguimientoInput = '';
     this.puntuacionInput = 0;
     this.comentarioInput = '';
   }
@@ -1021,9 +1061,12 @@ export class GrupoDetalle implements OnInit {
     if (!card || !g) return;
 
     try {
+      const etiqueta = this.seguimientoInput ? `[${this.seguimientoInput}]` : '';
+      const obs = this.comentarioInput.trim();
+      const comentarioFinal = etiqueta ? (obs ? `${etiqueta} ${obs}` : etiqueta) : obs;
+
       await this.materiaService.actualizarCard(card.id, {
-        puntuacion: this.puntuacionInput,
-        comentarioProfesor: this.comentarioInput.trim(),
+        comentarioProfesor: comentarioFinal,
       });
       await this.materiaService.registrarLog(
         g.id,
@@ -1033,9 +1076,89 @@ export class GrupoDetalle implements OnInit {
         card.id
       );
       await this.recargarCards();
+      await this.recargarLogs();
+      if (this.cardDetalle()?.id === card.id) {
+        const refreshed = this.todasLasCards().find((c) => c.id === card.id);
+        if (refreshed) this.cardDetalle.set(refreshed);
+      }
       this.cerrarPuntuar();
     } catch (e: any) {
-      this.error.set(e.message ?? 'Error al guardar la puntuación');
+      this.error.set(e.message ?? 'Error al guardar el estado de seguimiento');
+    }
+  }
+
+  // ==== Calificación Final del Grupo y Nota por Integrante (Banner) ====
+
+  calificacionGrupo = computed<{
+    notaFinal: number | null;
+    comentario: string;
+    notasIntegrantes: Record<string, number>;
+    docenteId: string;
+    timestamp: number;
+  } | null>(() => {
+    const logsCalif = this.logs()
+      .filter((l) => l.entidad === 'CalificacionGrupo' && l.accion === 'calificar_grupo')
+      .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
+    if (!logsCalif.length) return null;
+    const ultimo = logsCalif[0];
+    try {
+      const parsed = JSON.parse(ultimo.entidadId || '{}');
+      return {
+        notaFinal: typeof parsed.notaFinal === 'number' ? parsed.notaFinal : null,
+        comentario: parsed.comentario ?? '',
+        notasIntegrantes: parsed.notasIntegrantes ?? {},
+        docenteId: ultimo.usuarioId,
+        timestamp: ultimo.timestamp,
+      };
+    } catch {
+      return null;
+    }
+  });
+
+  abrirCalificarGrupo() {
+    const actual = this.calificacionGrupo();
+    this.notaFinalGrupoInput = actual?.notaFinal ?? 8;
+    this.comentarioGrupoInput = actual?.comentario ?? '';
+    const mapaNotas: Record<string, number> = {};
+    for (const uid of this.integrantesGrupo()) {
+      mapaNotas[uid] = actual?.notasIntegrantes?.[uid] ?? (actual?.notaFinal ?? 8);
+    }
+    this.notasIntegrantesInput.set(mapaNotas);
+    this.mostrarModalCalificarGrupo.set(true);
+  }
+
+  cerrarCalificarGrupo() {
+    this.mostrarModalCalificarGrupo.set(false);
+  }
+
+  setNotaIntegrante(uid: string, valor: string | number) {
+    const num = Number(valor);
+    this.notasIntegrantesInput.update((actual) => ({
+      ...actual,
+      [uid]: Number.isFinite(num) ? Math.max(0, Math.min(10, num)) : 0,
+    }));
+  }
+
+  async guardarCalificacionFinalGrupo() {
+    const g = this.grupo();
+    const uid = this.userId();
+    if (!g || !uid || !this.esDocente()) return;
+
+    this.error.set(null);
+    try {
+      const notaFinal =
+        this.notaFinalGrupoInput !== null && Number.isFinite(Number(this.notaFinalGrupoInput))
+          ? Math.max(0, Math.min(10, Number(this.notaFinalGrupoInput)))
+          : null;
+      await this.materiaService.guardarCalificacionGrupo(g.id, uid, {
+        notaFinal,
+        comentario: this.comentarioGrupoInput.trim(),
+        notasIntegrantes: this.notasIntegrantesInput(),
+      });
+      await this.recargarLogs();
+      this.cerrarCalificarGrupo();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al guardar la calificación del grupo');
     }
   }
 
@@ -1116,7 +1239,10 @@ export class GrupoDetalle implements OnInit {
       );
       const ocupadosSet = new Set(ocupados);
 
-      this.alumnosAgregables.set(alumnos.filter((a) => !ocupadosSet.has(a)));
+      const disponibles = alumnos.filter((a) => !ocupadosSet.has(a));
+      this.alumnosAgregables.set(disponibles);
+      const actualesSet = new Set((g.integrantes ?? []).filter((i): i is string => !!i));
+      this.alumnosDisponiblesParaAgregar.set(disponibles.filter((a) => !actualesSet.has(a)));
       this.integrantesSeleccionados.set(
         (g.integrantes ?? []).filter(
           (i): i is string => !!i && !docentesSet.has(i) && (this.esDocente() || i !== g.adminId)
@@ -1128,9 +1254,53 @@ export class GrupoDetalle implements OnInit {
     }
   }
 
+  async agregarIntegranteDirecto(alumnoId: string) {
+    const g = this.grupo();
+    if (!g || !alumnoId) return;
+    this.error.set(null);
+    try {
+      const actualizado = await this.materiaService.agregarIntegranteAGrupo(g.id, alumnoId);
+      this.grupo.set(actualizado);
+      await this.materiaService.registrarLog(
+        g.id,
+        this.userId()!,
+        'editar_integrantes',
+        'Grupo',
+        g.id,
+      );
+      await this.recargarLogs();
+      await this.abrirGestionarIntegrantes();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al agregar integrante');
+    }
+  }
+
+  async eliminarIntegranteDirecto(alumnoId: string) {
+    const g = this.grupo();
+    if (!g || !alumnoId || !this.esDocente()) return;
+    if (!confirm(`¿Quitar a "${this.nombreUsuario(alumnoId)}" del grupo?`)) return;
+    this.error.set(null);
+    try {
+      const actualizado = await this.materiaService.eliminarIntegranteDeGrupo(g.id, alumnoId);
+      this.grupo.set(actualizado);
+      await this.materiaService.registrarLog(
+        g.id,
+        this.userId()!,
+        'editar_integrantes',
+        'Grupo',
+        g.id,
+      );
+      await this.recargarLogs();
+      await this.abrirGestionarIntegrantes();
+    } catch (e: any) {
+      this.error.set(e.message ?? 'Error al eliminar integrante');
+    }
+  }
+
   cerrarGestionarIntegrantes() {
     this.mostrarModalIntegrantes.set(false);
     this.alumnosAgregables.set([]);
+    this.alumnosDisponiblesParaAgregar.set([]);
     this.integrantesSeleccionados.set([]);
   }
 
@@ -1357,6 +1527,7 @@ export class GrupoDetalle implements OnInit {
       solicitar_acceso: 'solicitó unirse al grupo',
       aprobar_acceso: 'aceptó una solicitud de ingreso',
       rechazar_acceso: 'rechazó una solicitud de ingreso',
+      calificar_grupo: 'calificó al grupo y sus integrantes',
     };
     return mapa[log.accion] ?? log.accion;
   }
