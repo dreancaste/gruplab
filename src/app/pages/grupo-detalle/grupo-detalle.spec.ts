@@ -217,16 +217,28 @@ describe('GrupoDetalle', () => {
   });
 
   it('removes a deleted card contribution after reloading the board', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
     const card = component.todasLasCards()[0];
 
     expect(component.metricasParticipacion()[0].esfuerzo).toBe(100);
 
-    await component.eliminarCard(card);
+    component.eliminarCard(card);
+    expect(component.confirmacionPendiente()).not.toBeNull();
+    await component.confirmarAccionPendiente();
 
     expect(materiaService.eliminarCard).toHaveBeenCalledWith(card.id);
     expect(materiaService.listarCardsDeGrupo).toHaveBeenCalledTimes(2);
     expect(component.metricasParticipacion().every((person) => person.participacion === null)).toBe(true);
+  });
+
+  it('renders the new task modal with visible action buttons', () => {
+    component.abrirCrearCard();
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const botones = Array.from(root.querySelectorAll('.modal-acciones button')).map(
+      (b) => (b.textContent ?? '').trim(),
+    );
+    expect(botones).toContain('Cancelar');
+    expect(botones).toContain('Crear');
   });
 
   it('extracts filename from attachment key correctly', () => {
