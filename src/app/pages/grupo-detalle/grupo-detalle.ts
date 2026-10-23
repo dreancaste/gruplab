@@ -335,6 +335,7 @@ export class GrupoDetalle implements OnInit {
   mostrarModalCard = signal(false);
   modoEdicionCard = signal(false);
   cardEditandoId = signal<string | null>(null);
+  guardandoCard = signal(false);
   cardPlanificacionBloqueada = false;
   cardTitulo = '';
   cardDescripcion = '';
@@ -784,8 +785,13 @@ export class GrupoDetalle implements OnInit {
     this.cardPesoEsfuerzo = 1;
     this.cardFechaLimite = '';
     const uid = this.userId();
+    const miembros = this.integrantesGrupo();
     this.asignadosSeleccionados.set(
-      uid && this.integrantesGrupo().includes(uid) ? [uid] : [],
+      uid && miembros.includes(uid)
+        ? [uid]
+        : miembros.length === 1
+          ? [miembros[0]]
+          : [],
     );
     this.mostrarModalCard.set(true);
   }
@@ -821,6 +827,7 @@ export class GrupoDetalle implements OnInit {
 
   cerrarModalCard() {
     this.mostrarModalCard.set(false);
+    this.guardandoCard.set(false);
     this.cardTitulo = '';
     this.cardDescripcion = '';
     this.cardEditandoId.set(null);
@@ -830,20 +837,28 @@ export class GrupoDetalle implements OnInit {
 
   async guardarCard() {
     const g = this.grupo();
-    if (!g || !this.cardTitulo.trim()) return;
-    if (!this.asignadosSeleccionados().length && this.integrantesGrupo().length > 0) {
-      this.error.set('Asigná la tarea a por lo menos un integrante.');
+    if (!g || this.guardandoCard()) return;
+    const titulo = this.cardTitulo.trim();
+    if (!titulo) {
+      this.error.set('Ingresá un título para la tarea.');
       return;
     }
 
+    const peso = ([1, 3, 5].includes(Number(this.cardPesoEsfuerzo))
+      ? Number(this.cardPesoEsfuerzo)
+      : 1) as 1 | 3 | 5;
+    const descripcion = this.cardDescripcion.trim();
+
+    this.error.set(null);
+    this.guardandoCard.set(true);
     try {
       if (this.modoEdicionCard() && this.cardEditandoId()) {
         await this.materiaService.actualizarCard(this.cardEditandoId()!, {
-          titulo: this.cardTitulo.trim(),
-          descripcion: this.cardDescripcion.trim(),
+          titulo,
+          descripcion,
           ...(!this.cardPlanificacionBloqueada
             ? {
-                pesoEsfuerzo: this.cardPesoEsfuerzo,
+                pesoEsfuerzo: peso,
                 asignados: this.asignadosSeleccionados(),
               }
             : {}),
@@ -851,39 +866,41 @@ export class GrupoDetalle implements OnInit {
             ? { fechaLimite: this.cardFechaLimite || null }
             : {}),
         });
-        await this.materiaService.registrarLog(
-          g.id,
-          this.userId()!,
-          'editar_card',
-          'Card',
-          this.cardEditandoId()!
-        );
+        try {
+          await this.materiaService.registrarLog(
+            g.id,
+            this.userId()!,
+            'editar_card',
+            'Card',
+            this.cardEditandoId()!
+          );
+        } catch {}
       } else {
-        const nueva = await this.materiaService.crearCard(g.id, this.cardTitulo.trim(), {
-          pesoEsfuerzo: this.cardPesoEsfuerzo,
+        const nueva = await this.materiaService.crearCard(g.id, titulo, {
+          ...(descripcion ? { descripcion } : {}),
+          pesoEsfuerzo: peso,
           asignados: this.asignadosSeleccionados(),
           ...(this.esDocente() && this.cardFechaLimite
             ? { fechaLimite: this.cardFechaLimite }
             : {}),
         });
-        if (this.cardDescripcion.trim()) {
-          await this.materiaService.actualizarCard(nueva.id, {
-            descripcion: this.cardDescripcion.trim(),
-          });
-        }
-        await this.materiaService.registrarLog(
-          g.id,
-          this.userId()!,
-          'crear_backlog',
-          'Card',
-          nueva.id
-        );
+        try {
+          await this.materiaService.registrarLog(
+            g.id,
+            this.userId()!,
+            'crear_backlog',
+            'Card',
+            nueva.id
+          );
+        } catch {}
       }
       await this.recargarCards();
       await this.recargarLogs();
       this.cerrarModalCard();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al guardar la card');
+    } finally {
+      this.guardandoCard.set(false);
     }
   }
 

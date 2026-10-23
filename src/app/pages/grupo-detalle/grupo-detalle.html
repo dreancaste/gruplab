@@ -578,27 +578,33 @@
 
     <label>
       Título
-      <input [(ngModel)]="cardTitulo" placeholder="Ej: Investigar fuentes" />
+      <input
+        [(ngModel)]="cardTitulo"
+        (keydown.enter)="guardarCard()"
+        placeholder="Ej: Investigar fuentes"
+      />
     </label>
 
     <label>
       Descripción (opcional)
-      <textarea [(ngModel)]="cardDescripcion"></textarea>
+      <textarea [(ngModel)]="cardDescripcion" rows="2"></textarea>
     </label>
 
-    <label>
-      Esfuerzo
-      <select [(ngModel)]="cardPesoEsfuerzo" [disabled]="cardPlanificacionBloqueada">
-        <option [ngValue]="1">1 · Chico</option>
-        <option [ngValue]="3">3 · Mediano</option>
-        <option [ngValue]="5">5 · Grande</option>
-      </select>
-    </label>
+    <div class="modal-fila-doble">
+      <label>
+        Esfuerzo
+        <select [(ngModel)]="cardPesoEsfuerzo" [disabled]="cardPlanificacionBloqueada">
+          <option [ngValue]="1">1 · Chico</option>
+          <option [ngValue]="3">3 · Mediano</option>
+          <option [ngValue]="5">5 · Grande</option>
+        </select>
+      </label>
 
-    <label *ngIf="esDocente()">
-      Fecha límite (exclusivo docente)
-      <input type="date" [(ngModel)]="cardFechaLimite" />
-    </label>
+      <label *ngIf="esDocente()">
+        Fecha límite (exclusivo docente)
+        <input type="date" [(ngModel)]="cardFechaLimite" />
+      </label>
+    </div>
 
     <fieldset class="asignados-selector" [disabled]="cardPlanificacionBloqueada">
       <legend>Asignar a integrantes</legend>
@@ -625,8 +631,13 @@
     </p>
 
     <div class="modal-acciones">
-      <button (click)="cerrarModalCard()">Cancelar</button>
-      <button class="btn-primario" (click)="guardarCard()">
+      <button type="button" (click)="cerrarModalCard()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-primario"
+        [disabled]="guardandoCard()"
+        (click)="guardarCard()"
+      >
         {{ modoEdicionCard() ? 'Guardar' : 'Crear' }}
       </button>
     </div>

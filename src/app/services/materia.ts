@@ -288,6 +288,7 @@ export class MateriaService {
     grupoId: string,
     titulo: string,
     detalles: {
+      descripcion?: string;
       pesoEsfuerzo: 1 | 3 | 5;
       asignados: string[];
       fechaLimite?: string;
@@ -300,6 +301,7 @@ export class MateriaService {
     const { data, errors } = await client.models.Card.create({
       grupoId,
       titulo,
+      ...(detalles.descripcion ? { descripcion: detalles.descripcion } : {}),
       estado,
       orden,
       pesoEsfuerzo: detalles.pesoEsfuerzo,

@@ -241,6 +241,43 @@ describe('GrupoDetalle', () => {
     expect(botones).toContain('Crear');
   });
 
+  it('creates a task with description and reloads the board even without preselected assignees', async () => {
+    (materiaService as any).crearCard = vi.fn().mockImplementation(
+      async (grupoId: string, titulo: string, detalles: any) => {
+        const nueva = {
+          id: 'card-nueva',
+          grupoId,
+          titulo,
+          descripcion: detalles.descripcion,
+          estado: 'backlog',
+          orden: 1,
+          pesoEsfuerzo: detalles.pesoEsfuerzo,
+          asignados: detalles.asignados,
+        } as Card;
+        cards = [...cards, nueva];
+        return nueva;
+      },
+    );
+
+    component.abrirCrearCard();
+    component.asignadosSeleccionados.set([]);
+    await component.guardarCard();
+    expect(component.error()).toBe('Ingresá un título para la tarea.');
+
+    component.cardTitulo = 'Armar presentación';
+    component.cardDescripcion = 'Diapositivas finales';
+    component.cardPesoEsfuerzo = 3;
+    await component.guardarCard();
+
+    expect((materiaService as any).crearCard).toHaveBeenCalledWith('group-1', 'Armar presentación', {
+      descripcion: 'Diapositivas finales',
+      pesoEsfuerzo: 3,
+      asignados: [],
+    });
+    expect(component.mostrarModalCard()).toBe(false);
+    expect(component.backlog().some((c) => c.id === 'card-nueva')).toBe(true);
+  });
+
   it('extracts filename from attachment key correctly', () => {
     expect(component.nombreAdjunto('cards/123/1729000000-tp1.pdf')).toBe('tp1.pdf');
     expect(component.nombreAdjunto('')).toBe('archivo');
