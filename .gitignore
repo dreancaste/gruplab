@@ -46,3 +46,8 @@ Thumbs.db
 # Credentials & secrets
 *.csv
 
+# Amplify (generated per environment)
+.amplify
+amplify_outputs*
+amplifyconfiguration*
+
