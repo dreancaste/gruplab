@@ -27,7 +27,7 @@
           <p *ngIf="m.descripcion">{{ m.descripcion }}</p>
           <div class="card-footer">
             <span class="badge">{{
-              m.admins?.includes(userId()!) ? 'Admin' : 'Profesor'
+              m.creadorId === userId() || m.admins?.includes(userId()!) ? 'Admin' : 'Profesor'
             }}</span>
             <span class="codigo">Código: {{ m.codigoInvitacion }}</span>
           </div>
@@ -105,17 +105,24 @@
 <div class="modal-backdrop" *ngIf="mostrarCrear()" (click)="cerrarCrear()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Crear aula</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Nombre
-      <input [(ngModel)]="nuevaNombre" placeholder="Ej: Programación 1" />
+      <input
+        [(ngModel)]="nuevaNombre"
+        (keydown.enter)="crearAula()"
+        placeholder="Ej: Programación 1"
+      />
     </label>
     <label>
       Descripción (opcional)
       <textarea [(ngModel)]="nuevaDescripcion"></textarea>
     </label>
     <div class="modal-acciones">
-      <button (click)="cerrarCrear()">Cancelar</button>
-      <button class="btn-primario" (click)="crearAula()">Crear</button>
+      <button type="button" (click)="cerrarCrear()">Cancelar</button>
+      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="crearAula()">
+        {{ guardando() ? 'Creando…' : 'Crear' }}
+      </button>
     </div>
   </div>
 </div>
@@ -124,17 +131,21 @@
 <div class="modal-backdrop" *ngIf="mostrarUnirse()" (click)="cerrarUnirse()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Unirme a un aula</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Código de invitación
       <input
         [(ngModel)]="codigoIngresado"
+        (keydown.enter)="unirseConCodigo()"
         placeholder="Ej: A3F9K2"
         style="text-transform: uppercase"
       />
     </label>
     <div class="modal-acciones">
-      <button (click)="cerrarUnirse()">Cancelar</button>
-      <button class="btn-primario" (click)="unirseConCodigo()">Unirme</button>
+      <button type="button" (click)="cerrarUnirse()">Cancelar</button>
+      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="unirseConCodigo()">
+        {{ guardando() ? 'Uniéndome…' : 'Unirme' }}
+      </button>
     </div>
   </div>
 </div>
@@ -143,14 +154,21 @@
 <div class="modal-backdrop" *ngIf="mostrarCrearTablero()" (click)="cerrarCrearTablero()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Crear tablero</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Nombre
-      <input [(ngModel)]="nombreTablero" placeholder="Ej: Proyecto final" />
+      <input
+        [(ngModel)]="nombreTablero"
+        (keydown.enter)="crearTablero()"
+        placeholder="Ej: Proyecto final"
+      />
     </label>
     <p class="ayuda">Vas a quedar como administrador del tablero.</p>
     <div class="modal-acciones">
-      <button (click)="cerrarCrearTablero()">Cancelar</button>
-      <button class="btn-primario" (click)="crearTablero()">Crear</button>
+      <button type="button" (click)="cerrarCrearTablero()">Cancelar</button>
+      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="crearTablero()">
+        {{ guardando() ? 'Creando…' : 'Crear' }}
+      </button>
     </div>
   </div>
 </div>
@@ -159,17 +177,21 @@
 <div class="modal-backdrop" *ngIf="mostrarUnirseTablero()" (click)="cerrarUnirseTablero()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Unirme a un tablero</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Código del tablero
       <input
         [(ngModel)]="codigoTablero"
+        (keydown.enter)="unirseATablero()"
         placeholder="Ej: A3F9K2"
         style="text-transform: uppercase"
       />
     </label>
     <div class="modal-acciones">
-      <button (click)="cerrarUnirseTablero()">Cancelar</button>
-      <button class="btn-primario" (click)="unirseATablero()">Unirme</button>
+      <button type="button" (click)="cerrarUnirseTablero()">Cancelar</button>
+      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="unirseATablero()">
+        {{ guardando() ? 'Uniéndome…' : 'Unirme' }}
+      </button>
     </div>
   </div>
 </div>

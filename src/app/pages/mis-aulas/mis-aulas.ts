@@ -29,6 +29,7 @@ export class MisAulas implements OnInit {
   codigoTablero = '';
   userId = signal<string | null>(null);
   cargando = signal(true);
+  guardando = signal(false);
   error = signal<string | null>(null);
 
   // Modal "Crear aula"
@@ -84,8 +85,14 @@ export class MisAulas implements OnInit {
 
   async crearAula() {
     const uid = this.userId();
-    if (!uid || !this.nuevaNombre.trim()) return;
+    if (!uid || this.guardando()) return;
+    if (!this.nuevaNombre.trim()) {
+      this.error.set('Ingresá un nombre para el aula.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardando.set(true);
     try {
       const nueva = await this.materiaService.crearMateria(
         this.nuevaNombre.trim(),
@@ -96,19 +103,29 @@ export class MisAulas implements OnInit {
       this.cerrarCrear();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al crear el aula');
+    } finally {
+      this.guardando.set(false);
     }
   }
 
   async unirseConCodigo() {
     const uid = this.userId();
-    if (!uid || !this.codigoIngresado.trim()) return;
+    if (!uid || this.guardando()) return;
+    if (!this.codigoIngresado.trim()) {
+      this.error.set('Ingresá el código de invitación.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardando.set(true);
     try {
       const materia = await this.materiaService.unirseConCodigo(this.codigoIngresado.trim(), uid);
       this.misMaterias.update((ms) => [...ms, materia]);
       this.cerrarUnirse();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al unirse al aula');
+    } finally {
+      this.guardando.set(false);
     }
   }
 
@@ -124,8 +141,10 @@ export class MisAulas implements OnInit {
   }
   cerrarCrear() {
     this.mostrarCrear.set(false);
+    this.guardando.set(false);
     this.nuevaNombre = '';
     this.nuevaDescripcion = '';
+    this.error.set(null);
   }
 
   abrirUnirse() {
@@ -134,7 +153,9 @@ export class MisAulas implements OnInit {
   }
   cerrarUnirse() {
     this.mostrarUnirse.set(false);
+    this.guardando.set(false);
     this.codigoIngresado = '';
+    this.error.set(null);
   }
     // ==== Tableros independientes ====
 
@@ -146,13 +167,21 @@ export class MisAulas implements OnInit {
 
   cerrarCrearTablero() {
     this.mostrarCrearTablero.set(false);
+    this.guardando.set(false);
     this.nombreTablero = '';
+    this.error.set(null);
   }
 
   async crearTablero() {
     const uid = this.userId();
-    if (!uid || !this.nombreTablero.trim()) return;
+    if (!uid || this.guardando()) return;
+    if (!this.nombreTablero.trim()) {
+      this.error.set('Ingresá un nombre para el tablero.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardando.set(true);
     try {
       const nuevo = await this.materiaService.crearTableroIndependiente(
         this.nombreTablero.trim(),
@@ -162,6 +191,8 @@ export class MisAulas implements OnInit {
       this.cerrarCrearTablero();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al crear el tablero');
+    } finally {
+      this.guardando.set(false);
     }
   }
 
@@ -173,13 +204,21 @@ export class MisAulas implements OnInit {
 
   cerrarUnirseTablero() {
     this.mostrarUnirseTablero.set(false);
+    this.guardando.set(false);
     this.codigoTablero = '';
+    this.error.set(null);
   }
 
   async unirseATablero() {
     const uid = this.userId();
-    if (!uid || !this.codigoTablero.trim()) return;
+    if (!uid || this.guardando()) return;
+    if (!this.codigoTablero.trim()) {
+      this.error.set('Ingresá el código del tablero.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardando.set(true);
     try {
       const tablero = await this.materiaService.unirseATableroConCodigo(
         this.codigoTablero.trim(),
@@ -189,6 +228,8 @@ export class MisAulas implements OnInit {
       this.cerrarUnirseTablero();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al unirse al tablero');
+    } finally {
+      this.guardando.set(false);
     }
   }
 

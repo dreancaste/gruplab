@@ -12,8 +12,8 @@
       <div>
         <h1>{{ grupo()!.nombre }}</h1>
         <p class="meta">
-          {{ grupo()!.integrantes?.length ?? 0 }} integrante{{
-            (grupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
+          {{ integrantesGrupo().length }} integrante{{
+            integrantesGrupo().length === 1 ? '' : 's'
           }}
           · {{ todasLasCards().length }} tarea{{
             todasLasCards().length === 1 ? '' : 's'
@@ -53,6 +53,14 @@
             🗑️ Eliminar grupo
           </button>
         </ng-container>
+
+        <button
+          *ngIf="!esDocente() && userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)"
+          class="btn-secundario"
+          (click)="abrirConfirmarSalir()"
+        >
+          🚪 Salir
+        </button>
       </div>
     </header>
 
@@ -594,11 +602,16 @@
     <div class="modal-fila-doble">
       <label>
         Esfuerzo
-        <select [(ngModel)]="cardPesoEsfuerzo" [disabled]="cardPlanificacionBloqueada">
+        <select *ngIf="!cardPlanificacionBloqueada" [(ngModel)]="cardPesoEsfuerzo">
           <option [ngValue]="1">1 · Chico</option>
           <option [ngValue]="3">3 · Mediano</option>
           <option [ngValue]="5">5 · Grande</option>
         </select>
+        <input
+          *ngIf="cardPlanificacionBloqueada"
+          [value]="cardPesoEsfuerzo === 1 ? '1 · Chico' : cardPesoEsfuerzo === 3 ? '3 · Mediano' : '5 · Grande'"
+          readonly
+        />
       </label>
 
       <label *ngIf="esDocente()">
@@ -607,7 +620,7 @@
       </label>
     </div>
 
-    <fieldset class="asignados-selector" [disabled]="cardPlanificacionBloqueada">
+    <fieldset class="asignados-selector" *ngIf="!esTableroSolo">
       <legend>Asignar a integrantes</legend>
       <p class="ayuda" *ngIf="integrantesGrupo().length === 0">
         {{ esTableroIndependiente
@@ -617,6 +630,7 @@
       <label *ngFor="let integranteId of integrantesGrupo()" class="asignado-item">
         <input
           type="checkbox"
+          [disabled]="cardPlanificacionBloqueada"
           [checked]="asignadosSeleccionados().includes(integranteId)"
           (change)="toggleAsignado(integranteId)"
         />
@@ -783,11 +797,11 @@
     <h3>Editar nombre del grupo</h3>
     <label>
       Nombre
-      <input [(ngModel)]="nuevoNombreGrupo" />
+      <input [(ngModel)]="nuevoNombreGrupo" (keydown.enter)="guardarNombreGrupo()" />
     </label>
     <div class="modal-acciones">
-      <button (click)="cerrarEditarNombre()">Cancelar</button>
-      <button class="btn-primario" (click)="guardarNombreGrupo()">Guardar</button>
+      <button type="button" (click)="cerrarEditarNombre()">Cancelar</button>
+      <button type="button" class="btn-primario" (click)="guardarNombreGrupo()">Guardar</button>
     </div>
   </div>
 </div>
@@ -811,9 +825,17 @@
       <div class="codigo-destacado">
         <code>{{ grupo()?.codigoInvitacion }}</code>
       </div>
-      <p class="ayuda">
-        Integrantes actuales: {{ grupo()!.integrantes?.length ?? 0 }}
-      </p>
+      <div class="integrantes-lista">
+        <p class="titulo-lista">Integrantes actuales ({{ integrantesGrupo().length }}):</p>
+        <div
+          class="alumno-item fila-integrante-directa"
+          *ngFor="let miembroId of integrantesGrupo()"
+        >
+          <span class="alumno-id">
+            {{ miembroId === userId() ? 'Vos (' + nombreUsuario(miembroId) + ')' : nombreUsuario(miembroId) }}
+          </span>
+        </div>
+      </div>
       <div class="modal-acciones">
         <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">
           Cerrar
@@ -892,14 +914,14 @@
     </p>
     <p
       class="ayuda"
-      *ngIf="esAdminDelGrupo() && (grupo()!.integrantes?.length ?? 0) > 1"
+      *ngIf="esAdminDelGrupo() && integrantesGrupo().length > 1"
     >
       Como sos el admin, el rol va a pasar automáticamente al siguiente
       integrante.
     </p>
     <p
       class="ayuda"
-      *ngIf="esAdminDelGrupo() && (grupo()!.integrantes?.length ?? 0) === 1"
+      *ngIf="esAdminDelGrupo() && integrantesGrupo().length === 1"
     >
       Sos el único integrante. Si salís, el grupo y sus cards se van a
       eliminar.

@@ -42,6 +42,7 @@ export class AulaDetalle implements OnInit {
   mostrarModalGrupo = signal(false);
   modoEdicion = signal(false);
   grupoEditandoId = signal<string | null>(null);
+  guardandoGrupo = signal(false);
   nombreGrupo = '';
   integrantesSeleccionados = signal<string[]>([]);
 
@@ -107,7 +108,21 @@ export class AulaDetalle implements OnInit {
     const uid = this.userId();
     if (!materia || !uid) return;
 
-    const grupos = await this.materiaService.listarGruposDeMateria(materia.id);
+    const docentes = new Set([...this.adminsAula, ...this.profesoresAula]);
+    const rawGrupos = await this.materiaService.listarGruposDeMateria(materia.id);
+    const grupos = rawGrupos.map((g) => {
+      const limpios = (g.integrantes ?? []).filter(
+        (id): id is string => !!id && !docentes.has(id),
+      );
+      if (
+        this.esDocente &&
+        limpios.length !== (g.integrantes ?? []).filter(Boolean).length &&
+        this.materiaService.actualizarGrupo
+      ) {
+        this.materiaService.actualizarGrupo(g.id, { integrantes: limpios }).catch(() => {});
+      }
+      return { ...g, integrantes: limpios };
+    });
     this.grupos.set(grupos);
 
     if (this.rol() === 'alumno') {
@@ -403,20 +418,37 @@ export class AulaDetalle implements OnInit {
 
   cerrarCrearGrupoAlumno() {
     this.mostrarCrearGrupoAlumno.set(false);
+    this.guardandoGrupo.set(false);
+    this.error.set(null);
   }
 
   async crearGrupoAlumno() {
     const uid = this.userId();
     const materia = this.materia();
-    if (!uid || !materia || !this.nombreGrupo.trim()) return;
+    if (!uid || !materia || this.guardandoGrupo()) return;
+    if (!this.nombreGrupo.trim()) {
+      this.error.set('Ingresá un nombre para el grupo.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardandoGrupo.set(true);
     try {
+      if (this.materiaService.alumnosEnOtroGrupo) {
+        const ocupados = await this.materiaService.alumnosEnOtroGrupo(materia.id, [uid]);
+        if (ocupados.length > 0) {
+          this.error.set('Ya formás parte de un grupo en esta aula.');
+          return;
+        }
+      }
       const nuevo = await this.materiaService.crearGrupo(materia.id, this.nombreGrupo.trim(), uid);
       this.miGrupo.set(nuevo);
       await this.recargarGrupos();
       this.cerrarCrearGrupoAlumno();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al crear el grupo');
+    } finally {
+      this.guardandoGrupo.set(false);
     }
   }
 
@@ -446,6 +478,7 @@ export class AulaDetalle implements OnInit {
 
   cerrarModalGrupo() {
     this.mostrarModalGrupo.set(false);
+    this.guardandoGrupo.set(false);
     this.nombreGrupo = '';
     this.integrantesSeleccionados.set([]);
     this.grupoEditandoId.set(null);
@@ -468,8 +501,14 @@ export class AulaDetalle implements OnInit {
   async guardarGrupo() {
     const materia = this.materia();
     const uid = this.userId();
-    if (!materia || !uid || !this.nombreGrupo.trim()) return;
+    if (!materia || !uid || this.guardandoGrupo()) return;
+    if (!this.nombreGrupo.trim()) {
+      this.error.set('Ingresá un nombre para el grupo.');
+      return;
+    }
 
+    this.error.set(null);
+    this.guardandoGrupo.set(true);
     try {
       const integrantes = this.integrantesSeleccionados();
       const grupoIdExcluir = this.modoEdicion() ? this.grupoEditandoId() : undefined;
@@ -491,18 +530,20 @@ export class AulaDetalle implements OnInit {
           integrantes,
         });
       } else {
-        const nuevo = await this.materiaService.crearGrupo(
+        await this.materiaService.crearGrupo(
           materia.id,
           this.nombreGrupo.trim(),
           uid,
+          integrantes,
         );
-        await this.materiaService.actualizarGrupo(nuevo.id, { integrantes });
       }
 
       await this.recargarGrupos();
       this.cerrarModalGrupo();
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al guardar el grupo');
+    } finally {
+      this.guardandoGrupo.set(false);
     }
   }
 

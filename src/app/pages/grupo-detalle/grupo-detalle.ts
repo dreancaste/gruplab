@@ -255,6 +255,7 @@ export class GrupoDetalle implements OnInit {
   grupo = signal<Grupo | null>(null);
   userId = signal<string | null>(null);
   esDocente = signal(false);
+  docentesAula = signal<string[]>([]);
   cargando = signal(true);
   error = signal<string | null>(null);
 
@@ -262,14 +263,18 @@ export class GrupoDetalle implements OnInit {
   logs = signal<LogActividad[]>([]);
   evaluaciones = signal<EvaluacionPar[]>([]);
   integrantesGrupo = computed(() => {
-    const raw = (this.grupo()?.integrantes ?? []).filter(
-      (integrante): integrante is string => !!integrante,
+    const g = this.grupo();
+    if (!g) return [];
+    const docentesSet = new Set(this.docentesAula());
+    const raw = (g.integrantes ?? []).filter(
+      (integrante): integrante is string =>
+        !!integrante && (this.esTableroIndependiente || !docentesSet.has(integrante)),
     );
     if (raw.length === 0 && this.esTableroIndependiente) {
-      const admin = this.grupo()?.adminId || this.userId();
+      const admin = g.adminId || this.userId();
       return admin ? [admin] : [];
     }
-    return raw;
+    return [...new Set(raw)];
   });
 
   metricasParticipacion = computed(() => {
@@ -337,6 +342,10 @@ export class GrupoDetalle implements OnInit {
   // Detectar si es tablero independiente
   get esTableroIndependiente(): boolean {
     return !this.grupo()?.materiaId;
+  }
+
+  get esTableroSolo(): boolean {
+    return this.esTableroIndependiente && this.integrantesGrupo().length <= 1;
   }
 
   // Modal crear/editar card
@@ -467,16 +476,40 @@ export class GrupoDetalle implements OnInit {
       if (grupo.materiaId) {
         const materia = await this.materiaService.obtenerMateria(grupo.materiaId);
         if (!materia) throw new Error('Materia no encontrada');
+        const docentes = [
+          materia.creadorId,
+          ...(materia.admins ?? []),
+          ...(materia.profesores ?? []),
+        ].filter((id): id is string => !!id);
+        const docentesUnicos = [...new Set(docentes)];
+        this.docentesAula.set(docentesUnicos);
+
         const rol = this.materiaService.obtenerRol(materia, userId);
         const docente = rol === 'admin' || rol === 'profesor';
         this.esDocente.set(docente);
 
-        const perteneceAlGrupo = (grupo.integrantes ?? []).includes(userId);
+        const docentesSet = new Set(docentesUnicos);
+        const integrantesLimpios = (grupo.integrantes ?? []).filter(
+          (id): id is string => !!id && !docentesSet.has(id),
+        );
+        if (
+          docente &&
+          integrantesLimpios.length !== (grupo.integrantes ?? []).filter(Boolean).length &&
+          this.materiaService.actualizarGrupo
+        ) {
+          this.materiaService
+            .actualizarGrupo(grupo.id, { integrantes: integrantesLimpios })
+            .catch(() => {});
+          this.grupo.set({ ...grupo, integrantes: integrantesLimpios });
+        }
+
+        const perteneceAlGrupo = integrantesLimpios.includes(userId) || grupo.adminId === userId;
         if (!docente && !perteneceAlGrupo) {
           this.router.navigate(['/aula', grupo.materiaId]);
           return;
         }
       } else {
+        this.docentesAula.set([]);
         this.esDocente.set(false);
       }
 
@@ -526,6 +559,10 @@ export class GrupoDetalle implements OnInit {
     if (!g) return;
     const cards = await this.materiaService.listarCardsDeGrupo(g.id);
     this.todasLasCards.set(cards);
+    const detalleActual = this.cardDetalle();
+    if (detalleActual) {
+      this.cardDetalle.set(cards.find((c) => c.id === detalleActual.id) ?? null);
+    }
     await this.cargarUrlsAdjuntos(cards);
   }
 
@@ -730,7 +767,13 @@ export class GrupoDetalle implements OnInit {
       if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
         cambiosTarjeta.completadaEn = Math.floor(Date.now() / 1000);
         if (esIndividual && !(card.asignados ?? []).some((id) => !!id)) {
-          cambiosTarjeta.asignados = [usuarioId];
+          const miembros = this.integrantesGrupo();
+          const responsable = miembros.includes(usuarioId)
+            ? usuarioId
+            : miembros[0] || (this.esTableroIndependiente ? usuarioId : '');
+          if (responsable) {
+            cambiosTarjeta.asignados = [responsable];
+          }
         }
       } else if (nuevoEstado !== 'hecho' && estadoAnterior === 'hecho') {
         cambiosTarjeta.completadaEn = null;
@@ -897,10 +940,17 @@ export class GrupoDetalle implements OnInit {
           );
         } catch {}
       } else {
+        const miembros = this.integrantesGrupo();
+        const asignadosFinales =
+          this.asignadosSeleccionados().length > 0
+            ? this.asignadosSeleccionados()
+            : this.esTableroSolo && miembros.length === 1
+              ? [miembros[0]]
+              : [];
         const nueva = await this.materiaService.crearCard(g.id, titulo, {
           ...(descripcion ? { descripcion } : {}),
           pesoEsfuerzo: peso,
-          asignados: this.asignadosSeleccionados(),
+          asignados: asignadosFinales,
           ...(this.esDocente() && this.cardFechaLimite
             ? { fechaLimite: this.cardFechaLimite }
             : {}),
@@ -1418,8 +1468,15 @@ export class GrupoDetalle implements OnInit {
       if (this.esDocente()) {
         integrantes = [...new Set(this.integrantesSeleccionados())];
       } else {
-        const actuales = (g.integrantes ?? []).filter((i): i is string => !!i);
-        integrantes = [...new Set([g.adminId, ...actuales, ...this.integrantesSeleccionados()])];
+        const docentesSet = new Set(this.docentesAula());
+        const actuales = (g.integrantes ?? []).filter(
+          (i): i is string => !!i && !docentesSet.has(i),
+        );
+        const adminAlumno =
+          g.adminId && !docentesSet.has(g.adminId) ? [g.adminId] : [];
+        integrantes = [
+          ...new Set([...adminAlumno, ...actuales, ...this.integrantesSeleccionados()]),
+        ];
       }
       const actualizado = await this.materiaService.actualizarGrupo(g.id, {
         integrantes,
@@ -1595,15 +1652,21 @@ export class GrupoDetalle implements OnInit {
 
   describirLog(log: LogActividad): string {
     const mapa: Record<string, string> = {
+      crear_backlog: 'creó una tarea en Backlog',
       crear_card: 'creó una tarea',
       editar_card: 'editó una tarea',
+      mover_a_progreso: 'movió una tarea a En progreso',
+      mover_a_revision: 'envió una tarea a En revisión',
+      completar_card: 'completó una tarea',
+      reabrir_card: 'reabrió una tarea',
       mover_card: 'cambió de columna una tarea',
-      revisar_card: 'revisó una tarea',
+      revisar_card: 'revisó y aprobó una tarea',
       eliminar_card: 'eliminó una tarea',
       adjuntar_archivo: 'adjuntó un archivo',
       eliminar_adjunto: 'eliminó un adjunto',
-      puntuar_card: 'calificó una tarea',
+      puntuar_card: 'actualizó el seguimiento de una tarea',
       evaluar_par: 'completó una evaluación de pares',
+      editar_grupo: 'cambió el nombre del grupo',
       editar_nombre: 'cambió el nombre del grupo',
       editar_integrantes: 'actualizó los integrantes del grupo',
       salir_grupo: 'salió del grupo',

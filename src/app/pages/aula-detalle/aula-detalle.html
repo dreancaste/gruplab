@@ -311,10 +311,15 @@
 <div class="modal-backdrop" *ngIf="mostrarModalGrupo()" (click)="cerrarModalGrupo()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>{{ modoEdicion() ? 'Editar grupo' : 'Crear grupo' }}</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
 
     <label>
       Nombre del grupo
-      <input [(ngModel)]="nombreGrupo" placeholder="Ej: Los Cracks" />
+      <input
+        [(ngModel)]="nombreGrupo"
+        (keydown.enter)="guardarGrupo()"
+        placeholder="Ej: Los Cracks"
+      />
     </label>
 
     <div class="integrantes">
@@ -338,12 +343,15 @@
       </div>
     </div>
 
-    <p *ngIf="error()" class="error">{{ error() }}</p>
-
     <div class="modal-acciones">
-      <button (click)="cerrarModalGrupo()">Cancelar</button>
-      <button class="btn-primario" (click)="guardarGrupo()">
-        {{ modoEdicion() ? 'Guardar' : 'Crear' }}
+      <button type="button" (click)="cerrarModalGrupo()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-primario"
+        [disabled]="guardandoGrupo()"
+        (click)="guardarGrupo()"
+      >
+        {{ guardandoGrupo() ? 'Guardando…' : (modoEdicion() ? 'Guardar' : 'Crear') }}
       </button>
     </div>
   </div>
@@ -353,14 +361,26 @@
 <div class="modal-backdrop" *ngIf="mostrarCrearGrupoAlumno()" (click)="cerrarCrearGrupoAlumno()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Crear grupo</h3>
+    <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Nombre del grupo
-      <input [(ngModel)]="nombreGrupo" placeholder="Ej: Los Cracks" />
+      <input
+        [(ngModel)]="nombreGrupo"
+        (keydown.enter)="crearGrupoAlumno()"
+        placeholder="Ej: Los Cracks"
+      />
     </label>
     <p class="ayuda">Vas a quedar como administrador del grupo.</p>
     <div class="modal-acciones">
-      <button (click)="cerrarCrearGrupoAlumno()">Cancelar</button>
-      <button class="btn-primario" (click)="crearGrupoAlumno()">Crear</button>
+      <button type="button" (click)="cerrarCrearGrupoAlumno()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-primario"
+        [disabled]="guardandoGrupo()"
+        (click)="crearGrupoAlumno()"
+      >
+        {{ guardandoGrupo() ? 'Creando…' : 'Crear' }}
+      </button>
     </div>
   </div>
 </div>

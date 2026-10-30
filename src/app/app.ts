@@ -192,6 +192,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.cargarEmail();
         } else {
           this.userEmail.set(null);
+          this.router.navigate(['/mis-aulas']);
         }
       }
     });
@@ -214,6 +215,7 @@ export class AppComponent implements OnInit, OnDestroy {
   cerrarSesion(signOutFn: () => void) {
     this.authService.clearCache();
     this.userEmail.set(null);
+    this.router.navigate(['/mis-aulas']);
     signOutFn();
   }
 }

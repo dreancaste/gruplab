@@ -24,6 +24,28 @@ export class MateriaService {
   }
 
   /**
+   * Helper que pagina automáticamente `.list()` de Amplify Data para no perder
+   * registros cuando una tabla supera el límite por página durante un filtrado.
+   */
+  private async listarTodo<T>(
+    listFn: (opts?: any) => Promise<{ data?: T[]; errors?: any[]; nextToken?: string | null }>,
+    filter?: Record<string, any>,
+  ): Promise<T[]> {
+    const acumulado: T[] = [];
+    let nextToken: string | null | undefined = undefined;
+    do {
+      const opts: Record<string, any> = { limit: 1000 };
+      if (filter) opts['filter'] = filter;
+      if (nextToken) opts['nextToken'] = nextToken;
+      const res = await listFn(opts);
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      if (res?.data?.length) acumulado.push(...res.data);
+      nextToken = res?.nextToken;
+    } while (nextToken);
+    return acumulado;
+  }
+
+  /**
    * Crea una nueva materia. El creador queda como admin automáticamente.
    */
   async crearMateria(nombre: string, descripcion: string, creadorId: string): Promise<Materia> {
@@ -44,10 +66,9 @@ export class MateriaService {
    * Devuelve todas las materias en las que el usuario participa (en cualquier rol).
    */
   async listarMisMaterias(userId: string): Promise<Materia[]> {
-    const { data, errors } = await client.models.Materia.list();
-    if (errors?.length) throw new Error(errors[0].message);
+    const data = await this.listarTodo<Materia>((opts) => client.models.Materia.list(opts));
 
-    return (data ?? []).filter(
+    return data.filter(
       (m) =>
         m.creadorId === userId ||
         m.admins?.includes(userId) ||
@@ -70,23 +91,24 @@ export class MateriaService {
    * Une a un alumno a una materia usando el código de invitación.
    */
   async unirseConCodigo(codigo: string, userId: string): Promise<Materia> {
-    const { data, errors } = await client.models.Materia.list({
-      filter: { codigoInvitacion: { eq: codigo.toUpperCase().trim() } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
+    const data = await this.listarTodo<Materia>(
+      (opts) => client.models.Materia.list(opts),
+      { codigoInvitacion: { eq: codigo.toUpperCase().trim() } },
+    );
     if (!data || data.length === 0) throw new Error('Código inválido');
 
     const materia = data[0];
     const yaEsAlumno = materia.alumnos?.includes(userId);
     const yaEsProfesor = materia.profesores?.includes(userId);
-    const yaEsAdmin = materia.admins?.includes(userId);
+    const yaEsAdmin = materia.creadorId === userId || materia.admins?.includes(userId);
     if (yaEsAlumno || yaEsProfesor || yaEsAdmin) {
       throw new Error('Ya estás inscripto en esta materia');
     }
 
+    const alumnosActuales = (materia.alumnos ?? []).filter((a): a is string => !!a);
     const { data: updated, errors: updateErrors } = await client.models.Materia.update({
       id: materia.id,
-      alumnos: [...(materia.alumnos ?? []), userId],
+      alumnos: [...alumnosActuales, userId],
     });
     if (updateErrors?.length) throw new Error(updateErrors[0].message);
     return updated!;
@@ -96,11 +118,10 @@ export class MateriaService {
    * Lista los grupos de una materia.
    */
   async listarGruposDeMateria(materiaId: string): Promise<Grupo[]> {
-    const { data, errors } = await client.models.Grupo.list({
-      filter: { materiaId: { eq: materiaId } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
-    return data ?? [];
+    return await this.listarTodo<Grupo>(
+      (opts) => client.models.Grupo.list(opts),
+      { materiaId: { eq: materiaId } },
+    );
   }
   /**
    * Obtiene una materia por ID.
@@ -112,14 +133,28 @@ export class MateriaService {
   }
 
   /**
-   * Crea un grupo nuevo dentro de una materia. El creador queda como admin del grupo.
+   * Crea un grupo nuevo dentro de una materia.
+   * Si se pasa `integrantesIniciales` (por ejemplo cuando lo crea el docente),
+   * se usa esa lista directamente sin meter al docente como alumno integrante.
    */
-  async crearGrupo(materiaId: string, nombre: string, adminId: string): Promise<Grupo> {
+  async crearGrupo(
+    materiaId: string,
+    nombre: string,
+    adminId: string,
+    integrantesIniciales?: string[],
+  ): Promise<Grupo> {
+    const integrantes =
+      integrantesIniciales !== undefined
+        ? [...new Set(integrantesIniciales.filter((i): i is string => typeof i === 'string' && i.trim().length > 0))]
+        : [adminId];
+    const resolvedAdminId =
+      integrantes.length > 0 && !integrantes.includes(adminId) ? integrantes[0] : adminId;
     const { data, errors } = await client.models.Grupo.create({
       nombre,
       materiaId,
-      adminId,
-      integrantes: [adminId],
+      esIndependiente: false,
+      adminId: resolvedAdminId,
+      integrantes,
     });
     if (errors?.length) throw new Error(errors[0].message);
     return data!;
@@ -137,11 +172,10 @@ export class MateriaService {
    * Lista las cards de un grupo.
    */
   async listarCardsDeGrupo(grupoId: string) {
-    const { data, errors } = await client.models.Card.list({
-      filter: { grupoId: { eq: grupoId } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
-    return data ?? [];
+    return await this.listarTodo<Schema['Card']['type']>(
+      (opts) => client.models.Card.list(opts),
+      { grupoId: { eq: grupoId } },
+    );
   }
 
   async obtenerCard(cardId: string) {
@@ -198,11 +232,10 @@ export class MateriaService {
   }
 
   async listarEvaluacionesDeGrupo(grupoId: string): Promise<EvaluacionPar[]> {
-    const { data, errors } = await client.models.EvaluacionPar.list({
-      filter: { grupoId: { eq: grupoId } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
-    return data ?? [];
+    return await this.listarTodo<EvaluacionPar>(
+      (opts) => client.models.EvaluacionPar.list(opts),
+      { grupoId: { eq: grupoId } },
+    );
   }
 
   async guardarEvaluacionPar(
@@ -219,10 +252,21 @@ export class MateriaService {
       | 'timestamp'
     > & { id: string },
   ): Promise<EvaluacionPar> {
-    const { data, errors } = await client.models.EvaluacionPar.create(evaluacion);
-    if (errors?.length) throw new Error(errors[0].message);
-    if (!data) throw new Error('No se pudo guardar la evaluación de pares');
-    return data;
+    try {
+      const { data, errors } = await client.models.EvaluacionPar.create(evaluacion);
+      if (!errors?.length && data) return data;
+      const { data: updated, errors: updateErrors } =
+        await client.models.EvaluacionPar.update(evaluacion);
+      if (updateErrors?.length) throw new Error(updateErrors[0].message);
+      if (!updated) throw new Error('No se pudo guardar la evaluación de pares');
+      return updated;
+    } catch {
+      const { data: updated, errors: updateErrors } =
+        await client.models.EvaluacionPar.update(evaluacion);
+      if (updateErrors?.length) throw new Error(updateErrors[0].message);
+      if (!updated) throw new Error('No se pudo guardar la evaluación de pares');
+      return updated;
+    }
   }
 
   /**
@@ -235,15 +279,23 @@ export class MateriaService {
   }
 
   /**
-   * Actualiza los campos de un grupo (nombre e integrantes).
+   * Actualiza los campos de un grupo (nombre, integrantes, adminId).
    */
   async actualizarGrupo(
     grupoId: string,
-    cambios: { nombre?: string; integrantes?: string[] },
+    cambios: { nombre?: string; integrantes?: string[]; adminId?: string },
   ): Promise<Grupo> {
+    const payload = { ...cambios };
+    if (cambios.integrantes !== undefined) {
+      payload.integrantes = [
+        ...new Set(
+          cambios.integrantes.filter((i): i is string => typeof i === 'string' && i.trim().length > 0),
+        ),
+      ];
+    }
     const { data, errors } = await client.models.Grupo.update({
       id: grupoId,
-      ...cambios,
+      ...payload,
     });
     if (errors?.length) throw new Error(errors[0].message);
     return data!;
@@ -258,6 +310,12 @@ export class MateriaService {
     for (const c of cards) {
       await client.models.Card.delete({ id: c.id });
     }
+    try {
+      const evaluaciones = await this.listarEvaluacionesDeGrupo(grupoId);
+      for (const ev of evaluaciones) {
+        await client.models.EvaluacionPar.delete({ id: ev.id });
+      }
+    } catch {}
     // Borrar el grupo
     const { errors } = await client.models.Grupo.delete({ id: grupoId });
     if (errors?.length) throw new Error(errors[0].message);
@@ -371,11 +429,10 @@ export class MateriaService {
   }
 
   async listarLogsDeGrupo(grupoId: string) {
-    const { data, errors } = await client.models.LogActividad.list({
-      filter: { grupoId: { eq: grupoId } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
-    return data ?? [];
+    return await this.listarTodo<Schema['LogActividad']['type']>(
+      (opts) => client.models.LogActividad.list(opts),
+      { grupoId: { eq: grupoId } },
+    );
   }
 
   async listarLogsDeMateria(materiaId: string) {
@@ -383,13 +440,7 @@ export class MateriaService {
     if (grupos.length === 0) return [];
 
     const resultados = await Promise.all(
-      grupos.map(async (grupo) => {
-        const { data, errors } = await client.models.LogActividad.list({
-          filter: { grupoId: { eq: grupo.id } },
-        });
-        if (errors?.length) throw new Error(errors[0].message);
-        return data ?? [];
-      }),
+      grupos.map((grupo) => this.listarLogsDeGrupo(grupo.id)),
     );
 
     const logs = resultados.flat();
@@ -453,12 +504,11 @@ export class MateriaService {
    * Lista los tableros independientes en los que participa el usuario.
    */
   async listarMisTableros(userId: string): Promise<Grupo[]> {
-    const { data, errors } = await client.models.Grupo.list();
-    if (errors?.length) throw new Error(errors[0].message);
-    return (data ?? []).filter(
+    const data = await this.listarTodo<Grupo>((opts) => client.models.Grupo.list(opts));
+    return data.filter(
       (g) =>
-        g.esIndependiente === true &&
-        (g.integrantes ?? []).some((i) => i === userId)
+        (g.esIndependiente === true || !g.materiaId) &&
+        (g.adminId === userId || (g.integrantes ?? []).some((i) => i === userId)),
     );
   }
 
@@ -466,14 +516,14 @@ export class MateriaService {
    * Une a un usuario a un tablero independiente con código.
    */
   async unirseATableroConCodigo(codigo: string, userId: string): Promise<Grupo> {
-    const { data, errors } = await client.models.Grupo.list({
-      filter: { codigoInvitacion: { eq: codigo.toUpperCase().trim() } },
-    });
-    if (errors?.length) throw new Error(errors[0].message);
+    const data = await this.listarTodo<Grupo>(
+      (opts) => client.models.Grupo.list(opts),
+      { codigoInvitacion: { eq: codigo.toUpperCase().trim() } },
+    );
     if (!data || data.length === 0) throw new Error('Código inválido');
 
     const tablero = data[0];
-    const integrantes = tablero.integrantes ?? [];
+    const integrantes = (tablero.integrantes ?? []).filter((i): i is string => !!i);
     if (integrantes.includes(userId)) {
       throw new Error('Ya estás en este tablero');
     }
@@ -548,8 +598,10 @@ export class MateriaService {
       if (!grupo) throw new Error('Grupo no encontrado');
       const actuales = (grupo.integrantes ?? []).filter((x): x is string => !!x);
       if (!actuales.includes(solicitanteId)) {
+        const nuevos = [...actuales, solicitanteId];
         await this.actualizarGrupo(grupoId, {
-          integrantes: [...actuales, solicitanteId],
+          integrantes: nuevos,
+          ...(actuales.length === 0 ? { adminId: solicitanteId } : {}),
         });
       }
       await this.registrarLog(grupoId, resueltoPorId, 'aprobar_acceso', 'SolicitudGrupo', solicitanteId);
@@ -633,13 +685,14 @@ export class MateriaService {
     if (!userId || !email) return;
     this.perfilesCache[userId] = email;
     try {
-      const { data } = await client.models.LogActividad.list({
-        filter: {
+      const data = await this.listarTodo<Schema['LogActividad']['type']>(
+        (opts) => client.models.LogActividad.list(opts),
+        {
           grupoId: { eq: 'PERFILES_GLOBAL' },
           usuarioId: { eq: userId },
         },
-      });
-      const yaExiste = (data ?? []).some((l) => l.entidadId === email);
+      );
+      const yaExiste = data.some((l) => l.entidadId === email);
       if (!yaExiste) {
         await client.models.LogActividad.create({
           grupoId: 'PERFILES_GLOBAL',
@@ -657,10 +710,11 @@ export class MateriaService {
 
   async obtenerMapaUsuarios(): Promise<Record<string, string>> {
     try {
-      const { data } = await client.models.LogActividad.list({
-        filter: { grupoId: { eq: 'PERFILES_GLOBAL' } },
-      });
-      for (const log of data ?? []) {
+      const data = await this.listarTodo<Schema['LogActividad']['type']>(
+        (opts) => client.models.LogActividad.list(opts),
+        { grupoId: { eq: 'PERFILES_GLOBAL' } },
+      );
+      for (const log of data) {
         if (log.usuarioId && log.entidadId) {
           this.perfilesCache[log.usuarioId] = log.entidadId;
         }
@@ -721,6 +775,7 @@ export class MateriaService {
 
     return await this.actualizarGrupo(grupoId, {
       integrantes: [...actuales, alumnoId],
+      ...(actuales.length === 0 ? { adminId: alumnoId } : {}),
     });
   }
 
@@ -731,8 +786,11 @@ export class MateriaService {
     const restantes = (grupo.integrantes ?? []).filter(
       (i): i is string => !!i && i !== alumnoId,
     );
+    const nuevoAdminId =
+      grupo.adminId === alumnoId && restantes.length > 0 ? restantes[0] : grupo.adminId;
     return await this.actualizarGrupo(grupoId, {
       integrantes: restantes,
+      adminId: nuevoAdminId,
     });
   }
 

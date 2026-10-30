@@ -371,4 +371,52 @@ describe('GrupoDetalle', () => {
     const ayuda = root.querySelector('.asignados-selector .ayuda');
     expect(ayuda?.textContent).toContain('Este grupo todavía no tiene alumnos inscriptos');
   });
+
+  it('excludes classroom teachers from integrantesGrupo and hides assignee selector on solo individual boards', async () => {
+    // Caso 1: grupo de aula donde el docente quedó en integrantes por error
+    component.docentesAula.set(['docente-1']);
+    component.esDocente.set(true);
+    component.grupo.set({
+      id: 'group-aula',
+      nombre: 'Grupo 1',
+      adminId: 'docente-1',
+      integrantes: ['docente-1', 'alumno-1'],
+      materiaId: 'materia-1',
+    } as unknown as Grupo);
+
+    expect(component.integrantesGrupo()).toEqual(['alumno-1']);
+
+    // Caso 2: tablero individual (solo 1 integrante, sin materiaId)
+    component.esDocente.set(false);
+    component.docentesAula.set([]);
+    component.grupo.set({
+      id: 'tablero-solo',
+      nombre: 'Mi tablero personal',
+      adminId: 'user-1',
+      integrantes: ['user-1'],
+      materiaId: undefined,
+    } as unknown as Grupo);
+
+    expect(component.esTableroSolo).toBe(true);
+    component.abrirCrearCard();
+    fixture.detectChanges();
+
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.asignados-selector')).toBeNull();
+  });
+
+  it('formats all activity log actions into readable Spanish descriptions', () => {
+    expect(component.describirLog({ accion: 'crear_backlog' } as LogActividad)).toBe(
+      'creó una tarea en Backlog',
+    );
+    expect(component.describirLog({ accion: 'mover_a_progreso' } as LogActividad)).toBe(
+      'movió una tarea a En progreso',
+    );
+    expect(component.describirLog({ accion: 'completar_card' } as LogActividad)).toBe(
+      'completó una tarea',
+    );
+    expect(component.describirLog({ accion: 'editar_grupo' } as LogActividad)).toBe(
+      'cambió el nombre del grupo',
+    );
+  });
 });
