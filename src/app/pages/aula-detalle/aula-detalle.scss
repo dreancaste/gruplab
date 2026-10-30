@@ -643,7 +643,9 @@ button.btn-secundario {
   width: 100%;
   max-width: 460px;
   max-height: calc(100vh - 2rem);
+  overflow-x: hidden;
   overflow-y: auto;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -748,13 +750,20 @@ button.btn-secundario {
 
   .alumno-item {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.45rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.65rem;
     padding: 0.45rem 0.65rem;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
+
+    input[type='checkbox'] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      flex-shrink: 0;
+    }
 
     &:hover {
       background: #eef2ff;
@@ -770,6 +779,8 @@ button.btn-secundario {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      flex: 1;
+      min-width: 0;
     }
   }
 }

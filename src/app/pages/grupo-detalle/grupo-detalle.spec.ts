@@ -355,6 +355,43 @@ describe('GrupoDetalle', () => {
     expect(component.error()).toBe('Asigná al menos una persona antes de completar la tarea.');
   });
 
+  it('allows completing a task assigned to all members of a group without deadlocking', async () => {
+    component.grupo.set({
+      id: 'group-1',
+      nombre: 'Grupo de equipo',
+      adminId: 'user-1',
+      integrantes: ['user-1', 'user-2'],
+      materiaId: 'materia-1',
+    } as unknown as Grupo);
+
+    const cardCompartida = {
+      id: 'card-compartida',
+      grupoId: 'group-1',
+      titulo: 'Tarea compartida por todo el grupo',
+      estado: 'revision',
+      orden: 0,
+      asignados: ['user-1', 'user-2'],
+    } as unknown as Card;
+    cards.push(cardCompartida);
+
+    const dragEvent = {
+      previousContainer: { data: [cardCompartida] },
+      container: { data: [] },
+      previousIndex: 0,
+      currentIndex: 0,
+    } as any;
+
+    await component.drop(dragEvent, 'hecho');
+    expect(component.error()).toBeNull();
+    expect(materiaService.actualizarCard).toHaveBeenCalledWith(
+      'card-compartida',
+      expect.objectContaining({
+        estado: 'hecho',
+        revisadaPor: 'user-1',
+      }),
+    );
+  });
+
   it('displays informational message when creating a task in a classroom group with no members', () => {
     component.grupo.set({
       id: 'group-empty',

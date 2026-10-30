@@ -656,6 +656,9 @@ export class MateriaService {
     'b34c1aaa-5011-704e-e9bf-e6f62c2ee306': 'luciano.barbosa30@gmail.com',
     'b3dc0ada-20e1-70bf-133e-5ce5f6c2d36c': 'luciano_l17@hotmail.com',
     'd3bcaaea-8091-7090-e940-37cf06abf4c1': 'leandroserapio95@gmail.com',
+    '833c4aba-8081-70ca-27e3-43a0ab5ce9c4': 'iglesiasngonzalo@gmail.com',
+    'b3dc9a8a-50c1-70de-fe49-0de5e5ac28a3': 'leandroserapio95+alumno2@gmail.com',
+    'a30c3a8a-b0f1-708d-d91f-36ae2a810967': 'leandroserapio95+alumno1@gmail.com',
     '34181498-4001-7030-bfe0-92e87e7858b3': 'luciano_l17@hotmail.com',
   };
 

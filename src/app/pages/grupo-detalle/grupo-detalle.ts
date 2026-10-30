@@ -329,14 +329,20 @@ export class GrupoDetalle implements OnInit {
   });
   puedeRevisar = (card: Card): boolean => {
     const usuarioId = this.userId();
-    if (this.esTableroIndependiente || this.integrantesGrupo().length <= 1) {
+    if (!usuarioId || card.estado !== 'revision') {
       return false;
     }
-    return !!usuarioId &&
-      card.estado === 'revision' &&
-      this.integrantesGrupo().includes(usuarioId) &&
-      !(card.asignados ?? []).includes(usuarioId) &&
-      card.revisadaPor !== usuarioId;
+    if (this.esTableroIndependiente && this.integrantesGrupo().length <= 1) {
+      return false;
+    }
+    const integrantes = this.integrantesGrupo();
+    const asignados = (card.asignados ?? []).filter((id): id is string => !!id);
+    const todosAsignados =
+      integrantes.length > 0 && integrantes.every((id) => asignados.includes(id));
+    const puedeComoDocente = this.esDocente();
+    const puedeComoIntegrante =
+      integrantes.includes(usuarioId) && (!asignados.includes(usuarioId) || todosAsignados);
+    return (puedeComoDocente || puedeComoIntegrante) && card.revisadaPor !== usuarioId;
   };
 
   // Detectar si es tablero independiente
@@ -437,6 +443,9 @@ export class GrupoDetalle implements OnInit {
     'b34c1aaa-5011-704e-e9bf-e6f62c2ee306': 'luciano.barbosa30@gmail.com',
     'b3dc0ada-20e1-70bf-133e-5ce5f6c2d36c': 'luciano_l17@hotmail.com',
     'd3bcaaea-8091-7090-e940-37cf06abf4c1': 'leandroserapio95@gmail.com',
+    '833c4aba-8081-70ca-27e3-43a0ab5ce9c4': 'iglesiasngonzalo@gmail.com',
+    'b3dc9a8a-50c1-70de-fe49-0de5e5ac28a3': 'leandroserapio95+alumno2@gmail.com',
+    'a30c3a8a-b0f1-708d-d91f-36ae2a810967': 'leandroserapio95+alumno1@gmail.com',
     '34181498-4001-7030-bfe0-92e87e7858b3': 'luciano_l17@hotmail.com',
   });
   mostrarModalLogs = signal(false);
@@ -582,11 +591,16 @@ export class GrupoDetalle implements OnInit {
     const grupo = this.grupo();
     const usuarioId = this.userId();
     if (!grupo || !usuarioId || card.estado !== 'revision') return;
-    if (!this.integrantesGrupo().includes(usuarioId)) {
+    const integrantes = this.integrantesGrupo();
+    const asignados = (card.asignados ?? []).filter((id): id is string => !!id);
+    const todosAsignados =
+      integrantes.length > 0 && integrantes.every((id) => asignados.includes(id));
+
+    if (!this.esDocente() && !integrantes.includes(usuarioId)) {
       this.error.set('Solo los integrantes del grupo pueden revisar esta tarea.');
       return;
     }
-    if ((card.asignados ?? []).includes(usuarioId)) {
+    if (!this.esDocente() && !todosAsignados && asignados.includes(usuarioId)) {
       this.error.set('La revisión debe hacerla alguien que no esté asignado a esta tarea.');
       return;
     }
@@ -714,17 +728,33 @@ export class GrupoDetalle implements OnInit {
     const usuarioId = this.userId();
     if (!usuarioId) return;
     const estadoAnterior = card.estado ?? 'backlog';
-    const esIndividual = this.esTableroIndependiente || this.integrantesGrupo().length <= 1;
+    const integrantes = this.integrantesGrupo();
+    const asignados = (card.asignados ?? []).filter((id): id is string => !!id);
+    const esIndividual = this.esTableroIndependiente || integrantes.length <= 1;
+    const todosAsignados =
+      integrantes.length > 0 && integrantes.every((id) => asignados.includes(id));
+    const puedeAutoRevisar =
+      this.esDocente() || !asignados.includes(usuarioId) || todosAsignados;
+    let autoRevisada = false;
 
     if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
       if (!esIndividual) {
-        if (!(card.asignados ?? []).some((id) => !!id)) {
+        if (asignados.length === 0) {
           this.error.set('Asigná al menos una persona antes de completar la tarea.');
           return;
         }
-        if (!card.revisadaPor || (card.asignados ?? []).includes(card.revisadaPor)) {
-          this.error.set('Antes de completar, otra persona del grupo debe revisar esta tarea.');
-          return;
+        const tieneRevisionPrevia =
+          !!card.revisadaPor &&
+          (todosAsignados ||
+            !asignados.includes(card.revisadaPor) ||
+            this.docentesAula().includes(card.revisadaPor));
+        if (!tieneRevisionPrevia) {
+          if (puedeAutoRevisar) {
+            autoRevisada = true;
+          } else {
+            this.error.set('Antes de completar, otra persona del grupo debe revisar esta tarea.');
+            return;
+          }
         }
       }
     }
@@ -765,7 +795,12 @@ export class GrupoDetalle implements OnInit {
       }
       const cambiosTarjeta = actualizaciones.get(card.id)!;
       if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
-        cambiosTarjeta.completadaEn = Math.floor(Date.now() / 1000);
+        const ahora = Math.floor(Date.now() / 1000);
+        cambiosTarjeta.completadaEn = ahora;
+        if (autoRevisada) {
+          cambiosTarjeta.revisadaPor = usuarioId;
+          cambiosTarjeta.revisadaEn = ahora;
+        }
         if (esIndividual && !(card.asignados ?? []).some((id) => !!id)) {
           const miembros = this.integrantesGrupo();
           const responsable = miembros.includes(usuarioId)
@@ -790,7 +825,8 @@ export class GrupoDetalle implements OnInit {
           cambio &&
           (tarjeta.estado !== cambio.estado ||
             tarjeta.orden !== cambio.orden ||
-            (cambio.asignados !== undefined && cambio.asignados !== tarjeta.asignados))
+            (cambio.asignados !== undefined && cambio.asignados !== tarjeta.asignados) ||
+            (cambio.revisadaPor !== undefined && cambio.revisadaPor !== tarjeta.revisadaPor))
         );
       });
       this.todasLasCards.update((tarjetas) =>
@@ -806,6 +842,9 @@ export class GrupoDetalle implements OnInit {
       );
 
       if (estadoAnterior !== nuevoEstado) {
+        if (autoRevisada) {
+          await this.materiaService.registrarLog(card.grupoId, usuarioId, 'revisar_card', 'Card', card.id);
+        }
         const accion = this.accionParaTransicion(nuevoEstado);
         const esHitoUnico = accion === 'mover_a_progreso' || accion === 'mover_a_revision';
         if (accion && (!esHitoUnico || !this.logs().some(
@@ -1531,7 +1570,11 @@ export class GrupoDetalle implements OnInit {
   // ==== Eliminar grupo completo ====
 
   get puedeEliminarGrupo(): boolean {
-    return this.esDocente() || (this.esAdminDelGrupo() && this.todasLasCards().length === 0);
+    return (
+      this.esDocente() ||
+      (this.esTableroIndependiente && this.esAdminDelGrupo()) ||
+      (this.esAdminDelGrupo() && this.todasLasCards().length === 0)
+    );
   }
 
   abrirConfirmarEliminarGrupo() {

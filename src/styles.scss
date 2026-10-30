@@ -104,7 +104,7 @@ button {
   }
 }
 
-input,
+input:not([type='checkbox']):not([type='radio']),
 textarea,
 select {
   font-family: var(--font-sans);
@@ -114,6 +114,9 @@ select {
   border-radius: 8px;
   padding: 0.6rem 0.8rem;
   font-size: 0.925rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
   &:focus {
@@ -121,6 +124,17 @@ select {
     border-color: var(--brand-500);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
   }
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--brand-600);
 }
 
 /* Amplify Authenticator Login wrapper */

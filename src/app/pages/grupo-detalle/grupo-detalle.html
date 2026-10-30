@@ -443,8 +443,15 @@
     </div>
 
     <!-- ACCIONES AL PIE (solo alumnos) -->
-    <div class="acciones-pie" *ngIf="!esDocente()">
-      <button class="btn-secundario" (click)="abrirConfirmarSalir()">
+    <div
+      class="acciones-pie"
+      *ngIf="!esDocente() && ((userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)) || puedeEliminarGrupo)"
+    >
+      <button
+        *ngIf="userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)"
+        class="btn-secundario"
+        (click)="abrirConfirmarSalir()"
+      >
         Salir del grupo
       </button>
       <button
@@ -566,6 +573,13 @@
       </button>
       <button class="btn-secundario" (click)="abrirEditarCard(cardDetalle()!); cerrarDetalleCard()">
         ✏️ Editar
+      </button>
+      <button
+        class="btn-secundario"
+        *ngIf="puedeRevisar(cardDetalle()!)"
+        (click)="marcarRevisada(cardDetalle()!); cerrarDetalleCard()"
+      >
+        🔎 Aprobar revisión
       </button>
       <button
         class="btn-secundario"

@@ -156,8 +156,8 @@
               <label class="selector-grupo-inline">
                 <span>Grupo:</span>
                 <select
-                  [value]="grupoDeAlumno(alumnoId)?.id || ''"
-                  (change)="asignarAlumnoAGrupoDesdeAula(alumnoId, $event)"
+                  [ngModel]="grupoDeAlumno(alumnoId)?.id || ''"
+                  (ngModelChange)="asignarAlumnoAGrupoDesdeAula(alumnoId, $event)"
                 >
                   <option value="">Sin grupo</option>
                   <option *ngFor="let g of grupos()" [value]="g.id">
