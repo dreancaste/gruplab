@@ -153,6 +153,7 @@ describe('GrupoDetalle', () => {
     listarCardsDeGrupo: ReturnType<typeof vi.fn>;
     listarLogsDeGrupo: ReturnType<typeof vi.fn>;
     listarEvaluacionesDeGrupo: ReturnType<typeof vi.fn>;
+    actualizarCard: ReturnType<typeof vi.fn>;
     eliminarCard: ReturnType<typeof vi.fn>;
     registrarLog: ReturnType<typeof vi.fn>;
   };
@@ -170,6 +171,9 @@ describe('GrupoDetalle', () => {
       listarCardsDeGrupo: vi.fn().mockImplementation(async () => cards),
       listarLogsDeGrupo: vi.fn().mockImplementation(async () => logs),
       listarEvaluacionesDeGrupo: vi.fn().mockResolvedValue([]),
+      actualizarCard: vi.fn().mockImplementation(async (id: string, updates: any) => {
+        cards = cards.map((card) => (card.id === id ? { ...card, ...updates } : card));
+      }),
       eliminarCard: vi.fn().mockImplementation(async (id: string) => {
         cards = cards.filter((card) => card.id !== id);
       }),
@@ -281,5 +285,90 @@ describe('GrupoDetalle', () => {
   it('extracts filename from attachment key correctly', () => {
     expect(component.nombreAdjunto('cards/123/1729000000-tp1.pdf')).toBe('tp1.pdf');
     expect(component.nombreAdjunto('')).toBe('archivo');
+  });
+
+  it('allows completing a task without assignees or peer review on an individual board and auto-assigns the user', async () => {
+    // Configura tablero individual con 1 solo integrante (sin materiaId)
+    component.grupo.set({
+      id: 'group-1',
+      nombre: 'Tablero personal',
+      adminId: 'user-1',
+      integrantes: ['user-1'],
+      materiaId: undefined,
+    } as unknown as Grupo);
+
+    const cardProgreso = {
+      id: 'card-solo',
+      grupoId: 'group-1',
+      titulo: 'Mi tarea individual',
+      estado: 'progreso',
+      orden: 0,
+      asignados: [],
+    } as unknown as Card;
+    cards.push(cardProgreso);
+
+    const dragEvent = {
+      previousContainer: { data: [cardProgreso] },
+      container: { data: [] },
+      previousIndex: 0,
+      currentIndex: 0,
+    } as any;
+
+    await component.drop(dragEvent, 'hecho');
+
+    expect(component.error()).toBeNull();
+    expect(materiaService.actualizarCard).toHaveBeenCalledWith(
+      'card-solo',
+      expect.objectContaining({
+        estado: 'hecho',
+        asignados: ['user-1'],
+      }),
+    );
+  });
+
+  it('blocks completing a task in a multi-member group without assignees and reviewer', async () => {
+    component.grupo.set({
+      id: 'group-1',
+      nombre: 'Grupo de equipo',
+      adminId: 'user-1',
+      integrantes: ['user-1', 'user-2'],
+      materiaId: 'materia-1',
+    } as unknown as Grupo);
+
+    const cardSinAsignados = {
+      id: 'card-equipo',
+      grupoId: 'group-1',
+      titulo: 'Tarea de equipo',
+      estado: 'progreso',
+      orden: 0,
+      asignados: [],
+    } as unknown as Card;
+
+    const dragEvent = {
+      previousContainer: { data: [cardSinAsignados] },
+      container: { data: [] },
+      previousIndex: 0,
+      currentIndex: 0,
+    } as any;
+
+    await component.drop(dragEvent, 'hecho');
+    expect(component.error()).toBe('Asigná al menos una persona antes de completar la tarea.');
+  });
+
+  it('displays informational message when creating a task in a classroom group with no members', () => {
+    component.grupo.set({
+      id: 'group-empty',
+      nombre: 'Grupo sin alumnos',
+      adminId: 'docente-1',
+      integrantes: [],
+      materiaId: 'materia-1',
+    } as unknown as Grupo);
+
+    component.abrirCrearCard();
+    fixture.detectChanges();
+
+    const root: HTMLElement = fixture.nativeElement;
+    const ayuda = root.querySelector('.asignados-selector .ayuda');
+    expect(ayuda?.textContent).toContain('Este grupo todavía no tiene alumnos inscriptos');
   });
 });

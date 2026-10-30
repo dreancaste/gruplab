@@ -298,14 +298,16 @@ export class MateriaService {
     const cards = await this.listarCardsDeGrupo(grupoId);
     const orden = cards.reduce((mayor, card) => Math.max(mayor, card.orden ?? -1), -1) + 1;
 
+    const asignadosValidos = (detalles.asignados ?? []).filter((a): a is string => !!a?.trim());
+
     const { data, errors } = await client.models.Card.create({
       grupoId,
       titulo,
-      ...(detalles.descripcion ? { descripcion: detalles.descripcion } : {}),
+      ...(detalles.descripcion?.trim() ? { descripcion: detalles.descripcion.trim() } : {}),
       estado,
       orden,
       pesoEsfuerzo: detalles.pesoEsfuerzo,
-      asignados: detalles.asignados,
+      ...(asignadosValidos.length > 0 ? { asignados: asignadosValidos } : {}),
       ...(detalles.fechaLimite ? { fechaLimite: detalles.fechaLimite } : {}),
       adjuntos: [],
     });
@@ -331,9 +333,13 @@ export class MateriaService {
       adjuntos: string[];
     }>,
   ) {
+    const payload = { ...cambios };
+    if (cambios.asignados) {
+      payload.asignados = cambios.asignados.filter((a): a is string => !!a?.trim());
+    }
     const { data, errors } = await client.models.Card.update({
       id: cardId,
-      ...cambios,
+      ...payload,
     });
     if (errors?.length) throw new Error(errors[0].message);
     return data!;

@@ -580,6 +580,7 @@
       Título
       <input
         [(ngModel)]="cardTitulo"
+        [class.input-error]="error() && !cardTitulo.trim()"
         (keydown.enter)="guardarCard()"
         placeholder="Ej: Investigar fuentes"
       />
@@ -609,8 +610,9 @@
     <fieldset class="asignados-selector" [disabled]="cardPlanificacionBloqueada">
       <legend>Asignar a integrantes</legend>
       <p class="ayuda" *ngIf="integrantesGrupo().length === 0">
-        Este grupo todavía no tiene integrantes. Podés crear la tarea sin asignar
-        y sumar integrantes desde <strong>👥 Integrantes</strong>.
+        {{ esTableroIndependiente
+            ? 'No hay integrantes en este tablero.'
+            : 'Este grupo todavía no tiene alumnos inscriptos. Podés crear la tarea para el backlog y asignar responsables cuando se sumen integrantes.' }}
       </p>
       <label *ngFor="let integranteId of integrantesGrupo()" class="asignado-item">
         <input
@@ -638,7 +640,7 @@
         [disabled]="guardandoCard()"
         (click)="guardarCard()"
       >
-        {{ modoEdicionCard() ? 'Guardar' : 'Crear' }}
+        {{ guardandoCard() ? 'Guardando…' : (modoEdicionCard() ? 'Guardar' : 'Crear') }}
       </button>
     </div>
   </div>

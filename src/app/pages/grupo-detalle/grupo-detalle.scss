@@ -732,6 +732,16 @@ button.btn-primario {
   bottom: 0;
   background: #ffffff;
   z-index: 2;
+
+  button {
+    min-width: 84px;
+    white-space: nowrap;
+  }
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444;
 }
 
 .modal-detalle {

@@ -261,11 +261,16 @@ export class GrupoDetalle implements OnInit {
   todasLasCards = signal<Card[]>([]);
   logs = signal<LogActividad[]>([]);
   evaluaciones = signal<EvaluacionPar[]>([]);
-  integrantesGrupo = computed(() =>
-    (this.grupo()?.integrantes ?? []).filter(
+  integrantesGrupo = computed(() => {
+    const raw = (this.grupo()?.integrantes ?? []).filter(
       (integrante): integrante is string => !!integrante,
-    ),
-  );
+    );
+    if (raw.length === 0 && this.esTableroIndependiente) {
+      const admin = this.grupo()?.adminId || this.userId();
+      return admin ? [admin] : [];
+    }
+    return raw;
+  });
 
   metricasParticipacion = computed(() => {
     return calcularMetricasParticipacion(
@@ -319,6 +324,9 @@ export class GrupoDetalle implements OnInit {
   });
   puedeRevisar = (card: Card): boolean => {
     const usuarioId = this.userId();
+    if (this.esTableroIndependiente || this.integrantesGrupo().length <= 1) {
+      return false;
+    }
     return !!usuarioId &&
       card.estado === 'revision' &&
       this.integrantesGrupo().includes(usuarioId) &&
@@ -669,14 +677,18 @@ export class GrupoDetalle implements OnInit {
     const usuarioId = this.userId();
     if (!usuarioId) return;
     const estadoAnterior = card.estado ?? 'backlog';
+    const esIndividual = this.esTableroIndependiente || this.integrantesGrupo().length <= 1;
+
     if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
-      if (!(card.asignados ?? []).some((id) => !!id)) {
-        this.error.set('Asigná al menos una persona antes de completar la tarea.');
-        return;
-      }
-      if (!card.revisadaPor || (card.asignados ?? []).includes(card.revisadaPor)) {
-        this.error.set('Antes de completar, otra persona del grupo debe revisar esta tarea.');
-        return;
+      if (!esIndividual) {
+        if (!(card.asignados ?? []).some((id) => !!id)) {
+          this.error.set('Asigná al menos una persona antes de completar la tarea.');
+          return;
+        }
+        if (!card.revisadaPor || (card.asignados ?? []).includes(card.revisadaPor)) {
+          this.error.set('Antes de completar, otra persona del grupo debe revisar esta tarea.');
+          return;
+        }
       }
     }
 
@@ -703,6 +715,7 @@ export class GrupoDetalle implements OnInit {
         Partial<{
           estado: Estado;
           orden: number;
+          asignados: string[];
           revisadaPor: string | null;
           revisadaEn: number | null;
           completadaEn: number | null;
@@ -716,6 +729,9 @@ export class GrupoDetalle implements OnInit {
       const cambiosTarjeta = actualizaciones.get(card.id)!;
       if (nuevoEstado === 'hecho' && estadoAnterior !== 'hecho') {
         cambiosTarjeta.completadaEn = Math.floor(Date.now() / 1000);
+        if (esIndividual && !(card.asignados ?? []).some((id) => !!id)) {
+          cambiosTarjeta.asignados = [usuarioId];
+        }
       } else if (nuevoEstado !== 'hecho' && estadoAnterior === 'hecho') {
         cambiosTarjeta.completadaEn = null;
         cambiosTarjeta.revisadaPor = null;
@@ -727,7 +743,12 @@ export class GrupoDetalle implements OnInit {
 
       const tarjetasModificadas = this.todasLasCards().filter((tarjeta) => {
         const cambio = actualizaciones.get(tarjeta.id);
-        return cambio && (tarjeta.estado !== cambio.estado || tarjeta.orden !== cambio.orden);
+        return (
+          cambio &&
+          (tarjeta.estado !== cambio.estado ||
+            tarjeta.orden !== cambio.orden ||
+            (cambio.asignados !== undefined && cambio.asignados !== tarjeta.asignados))
+        );
       });
       this.todasLasCards.update((tarjetas) =>
         tarjetas.map((tarjeta) => {
