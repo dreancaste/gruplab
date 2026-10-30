@@ -530,17 +530,26 @@ export class AulaDetalle implements OnInit {
       }
 
       if (this.modoEdicion() && this.grupoEditandoId()) {
-        await this.materiaService.actualizarGrupo(this.grupoEditandoId()!, {
+        const gId = this.grupoEditandoId()!;
+        await this.materiaService.actualizarGrupo(gId, {
           nombre: this.nombreGrupo.trim(),
           integrantes,
         });
+        this.materiaService
+          .registrarLog?.(gId, uid, 'editar_integrantes', 'Grupo', gId)
+          ?.catch(() => {});
       } else {
-        await this.materiaService.crearGrupo(
+        const nuevo = await this.materiaService.crearGrupo(
           materia.id,
           this.nombreGrupo.trim(),
           uid,
           integrantes,
         );
+        if (nuevo?.id) {
+          this.materiaService
+            .registrarLog?.(nuevo.id, uid, 'crear_grupo', 'Grupo', nuevo.id)
+            ?.catch(() => {});
+        }
       }
 
       await this.recargarGrupos();

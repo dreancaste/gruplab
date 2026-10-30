@@ -456,4 +456,63 @@ describe('GrupoDetalle', () => {
       'cambió el nombre del grupo',
     );
   });
+
+  it('renders all group members in calificacion banner when ungraded (null) and opens Nueva tarea, Historial, and Integrantes modals without crashing', async () => {
+    (materiaService as any).obtenerMateria = vi.fn().mockResolvedValue({
+      id: 'materia-1',
+      nombre: 'Ingeniería',
+      creadorId: 'docente-1',
+      admins: [],
+      profesores: [],
+      alumnos: ['alumno-1', 'alumno-2', 'alumno-3'],
+    });
+    (materiaService as any).alumnosEnOtroGrupo = vi.fn().mockResolvedValue([]);
+
+    component.esDocente.set(true);
+    component.docentesAula.set(['docente-1']);
+    component.logs.set([]);
+    expect(component.calificacionGrupo()).toBeNull();
+    component.grupo.set({
+      id: 'group-1',
+      nombre: 'Grupo 1',
+      adminId: 'docente-1',
+      integrantes: ['alumno-1', 'alumno-2'],
+      materiaId: 'materia-1',
+    } as unknown as Grupo);
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+
+    const root: HTMLElement = fixture.nativeElement;
+    const chips = root.querySelectorAll('.notas-integrantes-grid .nota-integrante-card');
+    expect(chips.length).toBe(2);
+    expect(chips[0].textContent).toContain('Sin nota');
+    expect(chips[1].textContent).toContain('Sin nota');
+
+    // Abrir modal + Nueva tarea
+    component.abrirCrearCard();
+    expect(() => fixture.detectChanges()).not.toThrow();
+    const modalCrear = root.querySelector('.modal h3');
+    expect(modalCrear?.textContent).toContain('Nueva tarea');
+    expect(component.asignadosSeleccionados()).toEqual(['alumno-1', 'alumno-2']);
+    component.cerrarModalCard();
+    fixture.detectChanges();
+
+    // Abrir modal Historial
+    component.abrirHistorial();
+    expect(() => fixture.detectChanges()).not.toThrow();
+    const modalHistorial = root.querySelector('.modal-historial h3');
+    expect(modalHistorial?.textContent).toContain('Historial de actividad');
+    component.cerrarHistorial();
+    fixture.detectChanges();
+
+    // Abrir modal Integrantes
+    await component.abrirGestionarIntegrantes();
+    expect(() => fixture.detectChanges()).not.toThrow();
+    const modalIntegrantes = root.querySelector('.modal h3');
+    expect(modalIntegrantes?.textContent).toContain('Gestionar integrantes');
+    const itemsActuales = root.querySelectorAll('.integrantes-lista .fila-integrante-directa');
+    expect(itemsActuales.length).toBe(3); // 2 actuales + 1 disponible para agregar
+    component.cerrarGestionarIntegrantes();
+    fixture.detectChanges();
+  });
 });

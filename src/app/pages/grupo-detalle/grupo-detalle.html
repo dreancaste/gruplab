@@ -95,17 +95,13 @@
           <div class="nota-final-circulo">
             <span class="nota-label">Nota final</span>
             <strong class="nota-valor">
-              {{
-                calificacionGrupo()?.notaFinal !== null && calificacionGrupo()?.notaFinal !== undefined
-                  ? calificacionGrupo()!.notaFinal + '/10'
-                  : '—'
-              }}
+              {{ notaFinalGrupoTexto() }}
             </strong>
           </div>
           <div class="banner-calif-info">
             <h2>🎓 Calificación del grupo e integrantes</h2>
             <p class="banner-comentario" *ngIf="calificacionGrupo()?.comentario">
-              “{{ calificacionGrupo()!.comentario }}”
+              “{{ calificacionGrupo()?.comentario }}”
             </p>
             <p class="banner-sin-calificar" *ngIf="!calificacionGrupo()">
               Todavía no se registró la calificación final de este grupo.
@@ -128,11 +124,11 @@
           </span>
           <span
             class="integrante-nota"
-            [class.sin-nota]="calificacionGrupo()?.notasIntegrantes?.[uid] === undefined"
+            [class.sin-nota]="notaDeIntegrante(uid) === null"
           >
             {{
-              calificacionGrupo()?.notasIntegrantes?.[uid] !== undefined
-                ? 'Nota: ' + calificacionGrupo()!.notasIntegrantes[uid] + '/10'
+              notaDeIntegrante(uid) !== null
+                ? 'Nota: ' + notaDeIntegrante(uid) + '/10'
                 : 'Sin nota'
             }}
           </span>

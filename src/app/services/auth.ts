@@ -10,8 +10,12 @@ export class AuthService {
     try {
       const user = await getCurrentUser();
       this._userId = user.userId;
-      const attrs = await fetchUserAttributes();
-      this._email = attrs['email'] ?? null;
+      try {
+        const attrs = await fetchUserAttributes();
+        this._email = attrs['email'] ?? user.signInDetails?.loginId ?? null;
+      } catch {
+        this._email = user.signInDetails?.loginId ?? null;
+      }
       return { userId: this._userId, email: this._email };
     } catch {
       this._userId = null;

@@ -894,7 +894,9 @@ export class GrupoDetalle implements OnInit {
         ? [uid]
         : miembros.length === 1
           ? [miembros[0]]
-          : [],
+          : this.esDocente() && miembros.length > 0
+            ? [...miembros]
+            : [],
     );
     this.mostrarModalCard.set(true);
   }
@@ -904,6 +906,7 @@ export class GrupoDetalle implements OnInit {
     this.modoEdicionCard.set(true);
     this.cardEditandoId.set(card.id);
     this.cardPlanificacionBloqueada =
+      !this.esDocente() &&
       card.estado !== 'backlog' &&
       card.pesoEsfuerzo != null &&
       !!card.asignados?.length;
@@ -1281,6 +1284,16 @@ export class GrupoDetalle implements OnInit {
     }
   });
 
+  notaFinalGrupoTexto(): string {
+    const nota = this.calificacionGrupo()?.notaFinal;
+    return typeof nota === 'number' && Number.isFinite(nota) ? `${nota}/10` : '—';
+  }
+
+  notaDeIntegrante(uid: string): number | null {
+    const nota = this.calificacionGrupo()?.notasIntegrantes?.[uid];
+    return typeof nota === 'number' && Number.isFinite(nota) ? nota : null;
+  }
+
   abrirCalificarGrupo() {
     const actual = this.calificacionGrupo();
     this.notaFinalGrupoInput = actual?.notaFinal ?? 8;
@@ -1368,12 +1381,17 @@ export class GrupoDetalle implements OnInit {
   async abrirGestionarIntegrantes() {
     const g = this.grupo();
     if (!g) return;
+    // Abrimos el modal de inmediato con los integrantes actuales para dar respuesta instantánea
+    this.integrantesSeleccionados.set(
+      this.integrantesGrupo().filter((i) => this.esDocente() || i !== g.adminId),
+    );
+    this.mostrarModalIntegrantes.set(true);
     try {
       // Tablero independiente: no hay aula de la cual sacar alumnos.
       if (!g.materiaId) {
         this.alumnosAgregables.set([]);
+        this.alumnosDisponiblesParaAgregar.set([]);
         this.integrantesSeleccionados.set([]);
-        this.mostrarModalIntegrantes.set(true);
         return;
       }
 
@@ -1414,7 +1432,6 @@ export class GrupoDetalle implements OnInit {
           (i): i is string => !!i && !docentesSet.has(i) && (this.esDocente() || i !== g.adminId)
         )
       );
-      this.mostrarModalIntegrantes.set(true);
     } catch (e: any) {
       this.error.set(e.message ?? 'Error al cargar integrantes');
     }
@@ -1681,6 +1698,7 @@ export class GrupoDetalle implements OnInit {
 
   abrirHistorial() {
     this.mostrarModalLogs.set(true);
+    this.recargarLogs().catch(() => {});
   }
 
   cerrarHistorial() {
@@ -1695,6 +1713,7 @@ export class GrupoDetalle implements OnInit {
 
   describirLog(log: LogActividad): string {
     const mapa: Record<string, string> = {
+      crear_grupo: 'creó el grupo',
       crear_backlog: 'creó una tarea en Backlog',
       crear_card: 'creó una tarea',
       editar_card: 'editó una tarea',
