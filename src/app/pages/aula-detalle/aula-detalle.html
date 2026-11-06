@@ -1,29 +1,116 @@
 <div class="aula-detalle">
-  <button class="btn-volver" (click)="volver()">← Volver a Mis aulas</button>
+  <nav class="breadcrumb" aria-label="Ruta de navegación">
+    <button class="btn-volver" (click)="volver()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Mis aulas
+    </button>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span class="breadcrumb-current">{{ materia()?.nombre || 'Aula' }}</span>
+  </nav>
 
-  <p *ngIf="cargando()">Cargando…</p>
-  <p *ngIf="error()" class="error">{{ error() }}</p>
+  <div class="loading-state" *ngIf="cargando()" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    Cargando aula…
+  </div>
+  <div *ngIf="error()" class="alert-error">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5M12 16.5v.5" stroke-linecap="round" />
+    </svg>
+    {{ error() }}
+  </div>
 
   <ng-container *ngIf="!cargando() && materia()">
     <!-- CABECERA -->
     <header class="cabecera">
-      <div>
+      <div class="cabecera-main">
+        <div class="cabecera-top">
+          <span class="rol-badge" [class]="'rol-' + rol()">
+            {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
+          </span>
+          <span class="cabecera-kicker">Aula</span>
+        </div>
         <h1>{{ materia()!.nombre }}</h1>
         <p *ngIf="materia()!.descripcion" class="descripcion">
           {{ materia()!.descripcion }}
         </p>
+        <p *ngIf="!materia()!.descripcion" class="descripcion descripcion-vacia">
+          Sin descripción. Compartí el código de invitación para sumar participantes.
+        </p>
+
+        <div class="cabecera-meta">
+          <span class="meta-chip">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+              <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+            </svg>
+            {{ grupos().length }} grupo{{ grupos().length === 1 ? '' : 's' }}
+          </span>
+          <span class="meta-chip">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path d="m2 9 10-5 10 5-10 5L2 9Z" stroke-linejoin="round" />
+              <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" stroke-linecap="round" />
+            </svg>
+            {{ alumnosDisponibles.length }} alumno{{ alumnosDisponibles.length === 1 ? '' : 's' }}
+          </span>
+          <span class="meta-chip meta-code">
+            <span class="meta-code-label">Código</span>
+            <code>{{ materia()!.codigoInvitacion }}</code>
+            <button class="btn-copiar" type="button" (click)="copiarCodigo($event)">
+              {{ codigoCopiado() ? '✓ Copiado' : 'Copiar' }}
+            </button>
+          </span>
+        </div>
       </div>
 
       <div class="cabecera-acciones">
-        <div class="rol-badge" [class]="'rol-' + rol()">
-          {{ rol() === 'admin' ? 'Admin' : rol() === 'profesor' ? 'Profesor' : 'Alumno' }}
-        </div>
         <button
           *ngIf="esAdmin"
-          class="btn-peligro"
+          class="btn-peligro btn-ghost-danger"
+          type="button"
           (click)="abrirConfirmarEliminarAula()"
         >
-          🗑️ Eliminar aula
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Eliminar aula
         </button>
       </div>
     </header>
@@ -38,36 +125,120 @@
       ></app-dashboard>
 
       <div class="header-seccion">
-        <h2>Grupos del aula ({{ grupos().length }})</h2>
-        <div class="acciones-seccion">
-          <div class="codigo-invitacion">
-            Código de invitación: <code>{{ materia()!.codigoInvitacion }}</code>
+        <div class="section-title">
+          <span class="section-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+              <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+            </svg>
+          </span>
+          <div>
+            <h2>
+              Grupos del aula <span class="count-pill">{{ grupos().length }}</span>
+            </h2>
+            <p class="section-sub">Equipos de trabajo y sus integrantes.</p>
           </div>
-          <button class="btn-primario" (click)="abrirCrearGrupo()">+ Crear grupo</button>
+        </div>
+        <div class="acciones-seccion">
+          <button class="btn-primario btn-compact" type="button" (click)="abrirCrearGrupo()">
+            + Crear grupo
+          </button>
         </div>
       </div>
 
-      <p *ngIf="grupos().length === 0" class="vacio">Todavía no hay grupos en esta aula.</p>
+      <div class="empty-state" *ngIf="grupos().length === 0">
+        <span class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="9" cy="8" r="3.2" />
+            <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+            <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div>
+          <strong>Todavía no hay grupos en esta aula</strong>
+          <p>Creá el primer grupo y asigná a sus integrantes.</p>
+        </div>
+        <button class="btn-primario" type="button" (click)="abrirCrearGrupo()">Crear grupo</button>
+      </div>
 
       <div class="grid-grupos">
-        <div class="card-grupo" *ngFor="let g of grupos()" (click)="abrirGrupo(g.id)">
+        <article
+          class="card-grupo"
+          *ngFor="let g of grupos()"
+          role="button"
+          tabindex="0"
+          (click)="abrirGrupo(g.id)"
+          (keydown.enter)="abrirGrupo(g.id)"
+          (keydown.space)="abrirGrupo(g.id); $event.preventDefault()"
+        >
           <div class="card-header">
-            <h3>{{ g.nombre }}</h3>
-            <div class="card-acciones" (click)="$event.stopPropagation()">
-              <button class="btn-icono" title="Editar grupo e integrantes" (click)="abrirEditarGrupo(g, $event)">
-                ✏️
+            <div class="card-title-wrap">
+              <span class="grupo-inicial" aria-hidden="true">{{
+                g.nombre.charAt(0).toUpperCase()
+              }}</span>
+              <div>
+                <h3>{{ g.nombre }}</h3>
+                <p class="meta">
+                  {{ g.integrantes?.length ?? 0 }} integrante{{
+                    (g.integrantes?.length ?? 0) === 1 ? '' : 's'
+                  }}
+                </p>
+              </div>
+            </div>
+            <div
+              class="card-acciones"
+              (click)="$event.stopPropagation()"
+              (keydown.enter)="$event.stopPropagation()"
+              (keydown.space)="$event.stopPropagation()"
+            >
+              <button
+                class="btn-icono"
+                type="button"
+                title="Editar grupo e integrantes"
+                (click)="abrirEditarGrupo(g, $event)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M4 20h4l10-10-4-4L4 16v4Z" stroke-linejoin="round" />
+                  <path d="m13.5 5.5 4 4" stroke-linecap="round" />
+                </svg>
               </button>
-              <button class="btn-icono" title="Eliminar grupo" (click)="confirmarEliminar(g, $event)">
-                🗑️
+              <button
+                class="btn-icono btn-icono-danger"
+                type="button"
+                title="Eliminar grupo"
+                (click)="confirmarEliminar(g, $event)"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13h10l1-13"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </button>
             </div>
           </div>
-          <p class="meta">
-            {{ g.integrantes?.length ?? 0 }} integrante{{
-              (g.integrantes?.length ?? 0) === 1 ? '' : 's'
-            }}
-          </p>
-          <div class="integrantes-chips-grupo" *ngIf="g.integrantes?.length" (click)="$event.stopPropagation()">
+
+          <div
+            class="integrantes-chips-grupo"
+            *ngIf="g.integrantes?.length"
+            (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
+            (keydown.space)="$event.stopPropagation()"
+          >
             <span class="chip-miembro" *ngFor="let miembroId of g.integrantes">
               {{ nombreUsuario(miembroId) }}
               <button
@@ -86,31 +257,27 @@
             class="solicitudes-box"
             *ngIf="solicitudesDeGrupo(g.id).length > 0"
             (click)="$event.stopPropagation()"
+            (keydown.enter)="$event.stopPropagation()"
+            (keydown.space)="$event.stopPropagation()"
           >
             <p class="solicitudes-titulo">
-              🔔 Solicitudes pendientes ({{ solicitudesDeGrupo(g.id).length }})
+              Solicitudes pendientes ({{ solicitudesDeGrupo(g.id).length }})
             </p>
             <div class="solicitud-fila" *ngFor="let solId of solicitudesDeGrupo(g.id)">
               <span class="solicitante-id" [title]="solId">{{ nombreUsuario(solId) }}</span>
               <div class="solicitud-botones">
-                <button
-                  class="btn-aceptar"
-                  (click)="responderSolicitud(g, solId, true, $event)"
-                >
+                <button class="btn-aceptar" (click)="responderSolicitud(g, solId, true, $event)">
                   ✓ Aceptar
                 </button>
-                <button
-                  class="btn-rechazar"
-                  (click)="responderSolicitud(g, solId, false, $event)"
-                >
+                <button class="btn-rechazar" (click)="responderSolicitud(g, solId, false, $event)">
                   ✕
                 </button>
               </div>
             </div>
           </div>
 
-          <span class="proximamente">Ver tablero →</span>
-        </div>
+          <span class="proximamente">Ver tablero <span aria-hidden="true">→</span></span>
+        </article>
       </div>
 
       <!-- SECCIÓN VISIBLE DE LISTA DE ALUMNOS Y DOCENTES DEL AULA -->
@@ -127,9 +294,7 @@
               placeholder="Ingresá el email del alumno para agregarlo al aula…"
               (keyup.enter)="agregarAlumnoAlAula()"
             />
-            <button class="btn-primario" (click)="agregarAlumnoAlAula()">
-              + Agregar al aula
-            </button>
+            <button class="btn-primario" (click)="agregarAlumnoAlAula()">+ Agregar al aula</button>
           </div>
           <div class="sugeridos-aula" *ngIf="usuariosSugeridosParaAula.length > 0">
             <span class="sugeridos-label">Usuarios registrados disponibles:</span>
@@ -145,8 +310,10 @@
         </div>
 
         <p *ngIf="alumnosDisponibles.length === 0" class="vacio">
-          Todavía no hay alumnos inscriptos en esta aula. Podés agregarlos arriba o compartir el código
-          <code>{{ materia()!.codigoInvitacion }}</code>.
+          Todavía no hay alumnos inscriptos en esta aula. Podés agregarlos arriba o compartir el
+          código
+          <code>{{ materia()!.codigoInvitacion }}</code
+          >.
         </p>
 
         <div class="tabla-alumnos" *ngIf="alumnosDisponibles.length > 0">
@@ -174,16 +341,10 @@
               >
                 Ir a su grupo →
               </button>
-              <button
-                class="btn-mini btn-promover"
-                (click)="promoverAProfesor(alumnoId)"
-              >
+              <button class="btn-mini btn-promover" (click)="promoverAProfesor(alumnoId)">
                 ⬆️ Hacer profesor
               </button>
-              <button
-                class="btn-mini btn-quitar-aula"
-                (click)="quitarAlumnoDelAula(alumnoId)"
-              >
+              <button class="btn-mini btn-quitar-aula" (click)="quitarAlumnoDelAula(alumnoId)">
                 🗑️ Eliminar del aula
               </button>
             </div>
@@ -199,9 +360,7 @@
               <span class="rol-badge rol-profesor">Profesor</span>
             </div>
             <div class="acciones-alumno-aula" *ngIf="esAdmin">
-              <button class="btn-mini" (click)="degradarAAlumno(profId)">
-                Pasar a alumno
-              </button>
+              <button class="btn-mini" (click)="degradarAAlumno(profId)">Pasar a alumno</button>
             </div>
           </div>
         </div>
@@ -212,22 +371,37 @@
     <section *ngIf="!esDocente">
       <!-- Si todavía no pertenece a ningún grupo -->
       <div *ngIf="!miGrupo()" class="sin-grupo">
+        <span class="sin-grupo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="9" cy="8" r="3.2" />
+            <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+            <path d="M19 8v6M16 11h6" stroke-linecap="round" />
+          </svg>
+        </span>
         <h2>Todavía no estás en ningún grupo</h2>
-        <p>Podés crear tu propio grupo o solicitar acceso a uno de los grupos existentes del salón.</p>
+        <p>
+          Podés crear tu propio grupo o solicitar acceso a uno de los grupos existentes del salón.
+        </p>
         <button class="btn-primario" (click)="abrirCrearGrupoAlumno()">+ Crear grupo</button>
       </div>
 
       <!-- Si ya pertenece a un grupo -->
       <div *ngIf="miGrupo()" class="mi-grupo card-mi-grupo">
         <div class="header-seccion">
-          <div>
-            <h2>Mi grupo: {{ miGrupo()!.nombre }}</h2>
-            <p class="meta">
-              {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
-                (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
-              }} ({{ nombresIntegrantesGrupo(miGrupo()!) }})
-              · {{ esAdminDeMiGrupo() ? 'Sos administrador del grupo' : 'Integrante' }}
-            </p>
+          <div class="mi-grupo-head">
+            <span class="grupo-inicial" aria-hidden="true">{{
+              miGrupo()!.nombre.charAt(0).toUpperCase()
+            }}</span>
+            <div>
+              <h2>Mi grupo: {{ miGrupo()!.nombre }}</h2>
+              <p class="meta">
+                {{ miGrupo()!.integrantes?.length ?? 0 }} integrante{{
+                  (miGrupo()!.integrantes?.length ?? 0) === 1 ? '' : 's'
+                }}
+                ({{ nombresIntegrantesGrupo(miGrupo()!) }}) ·
+                {{ esAdminDeMiGrupo() ? 'Sos administrador del grupo' : 'Integrante' }}
+              </p>
+            </div>
           </div>
           <button class="btn-primario" (click)="abrirGrupo(miGrupo()!.id)">Ver tablero →</button>
         </div>
@@ -238,7 +412,7 @@
           *ngIf="esAdminDeMiGrupo() && solicitudesDeGrupo(miGrupo()!.id).length > 0"
         >
           <p class="solicitudes-titulo">
-            🔔 Compañeros que solicitaron unirse ({{ solicitudesDeGrupo(miGrupo()!.id).length }})
+            Compañeros que solicitaron unirse ({{ solicitudesDeGrupo(miGrupo()!.id).length }})
           </p>
           <div class="solicitud-fila" *ngFor="let solId of solicitudesDeGrupo(miGrupo()!.id)">
             <span class="solicitante-id" [title]="solId">{{ nombreUsuario(solId) }}</span>
@@ -263,22 +437,55 @@
       <!-- Listado de grupos del salón para alumnos -->
       <div class="grupos-salon">
         <div class="header-seccion">
-          <h2>Grupos del salón ({{ otrosGruposDelSalon.length }})</h2>
+          <div class="section-title">
+            <span class="section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="9" cy="8" r="3.2" />
+                <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+                <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+              </svg>
+            </span>
+            <div>
+              <h2>
+                Grupos del salón <span class="count-pill">{{ otrosGruposDelSalon.length }}</span>
+              </h2>
+              <p class="section-sub">Si todavía no tenés grupo, podés solicitar acceso.</p>
+            </div>
+          </div>
         </div>
 
-        <p *ngIf="otrosGruposDelSalon.length === 0" class="vacio">
-          No hay otros grupos creados en este salón todavía.
-        </p>
+        <div class="empty-state" *ngIf="otrosGruposDelSalon.length === 0">
+          <span class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+              <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+            </svg>
+          </span>
+          <div>
+            <strong>No hay otros grupos creados todavía</strong>
+            <p>Cuando tus compañeros creen grupos, van a aparecer acá.</p>
+          </div>
+        </div>
 
         <div class="grid-grupos" *ngIf="otrosGruposDelSalon.length > 0">
           <div class="card-grupo card-grupo-alumno" *ngFor="let g of otrosGruposDelSalon">
             <div class="card-header">
-              <h3>{{ g.nombre }}</h3>
+              <div class="card-title-wrap">
+                <span class="grupo-inicial" aria-hidden="true">{{
+                  g.nombre.charAt(0).toUpperCase()
+                }}</span>
+                <div>
+                  <h3>{{ g.nombre }}</h3>
+                  <p class="meta">
+                    {{ g.integrantes?.length ?? 0 }} integrante{{
+                      (g.integrantes?.length ?? 0) === 1 ? '' : 's'
+                    }}
+                  </p>
+                </div>
+              </div>
             </div>
-            <p class="meta">
-              {{ g.integrantes?.length ?? 0 }} integrante{{
-                (g.integrantes?.length ?? 0) === 1 ? '' : 's'
-              }}:
+            <p class="integrantes-nombres">
               <strong>{{ nombresIntegrantesGrupo(g) }}</strong>
             </p>
 
@@ -290,14 +497,10 @@
                 [disabled]="enviandoSolicitudGrupoId() === g.id"
                 (click)="solicitarAcceso(g, $event)"
               >
-                {{
-                  enviandoSolicitudGrupoId() === g.id
-                    ? 'Enviando…'
-                    : '🙋 Solicitar acceso'
-                }}
+                {{ enviandoSolicitudGrupoId() === g.id ? 'Enviando…' : 'Solicitar acceso' }}
               </button>
               <span *ngIf="yaSolicitoAcceso(g.id)" class="badge-pendiente">
-                ⏳ Solicitud enviada
+                Solicitud enviada
               </span>
             </ng-container>
           </div>
@@ -351,7 +554,7 @@
         [disabled]="guardandoGrupo()"
         (click)="guardarGrupo()"
       >
-        {{ guardandoGrupo() ? 'Guardando…' : (modoEdicion() ? 'Guardar' : 'Crear') }}
+        {{ guardandoGrupo() ? 'Guardando…' : modoEdicion() ? 'Guardar' : 'Crear' }}
       </button>
     </div>
   </div>
@@ -402,18 +605,14 @@
 </div>
 
 <!-- CONFIRMAR ELIMINAR AULA -->
-<div
-  class="modal-backdrop"
-  *ngIf="mostrarConfirmarEliminarAula()"
-  (click)="cancelarEliminarAula()"
->
+<div class="modal-backdrop" *ngIf="mostrarConfirmarEliminarAula()" (click)="cancelarEliminarAula()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Eliminar aula</h3>
     <p>
       ¿Seguro que querés eliminar el aula
       <strong>{{ materia()?.nombre }}</strong
-      >? Se van a borrar también todos los grupos, sus integrantes y sus
-      cards. Esta acción no se puede deshacer.
+      >? Se van a borrar también todos los grupos, sus integrantes y sus cards. Esta acción no se
+      puede deshacer.
     </p>
     <div class="modal-acciones">
       <button (click)="cancelarEliminarAula()">Cancelar</button>
@@ -422,25 +621,18 @@
   </div>
 </div>
 
-
 <!-- CONFIRMAR QUITAR ALUMNO DEL AULA -->
-<div
-  class="modal-backdrop"
-  *ngIf="alumnoAQuitarDelAula()"
-  (click)="cancelarQuitarAlumnoDelAula()"
->
+<div class="modal-backdrop" *ngIf="alumnoAQuitarDelAula()" (click)="cancelarQuitarAlumnoDelAula()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>⚠️ Quitar alumno del aula</h3>
     <p>
       ¿Seguro que querés dar de baja a
-      <strong>{{ nombreUsuario(alumnoAQuitarDelAula()) }}</strong> de esta aula?
-      También se lo quitará de su grupo actual.
+      <strong>{{ nombreUsuario(alumnoAQuitarDelAula()) }}</strong> de esta aula? También se lo
+      quitará de su grupo actual.
     </p>
     <div class="modal-acciones">
       <button (click)="cancelarQuitarAlumnoDelAula()">Cancelar</button>
-      <button class="btn-peligro" (click)="confirmarQuitarAlumnoDelAula()">
-        Quitar del aula
-      </button>
+      <button class="btn-peligro" (click)="confirmarQuitarAlumnoDelAula()">Quitar del aula</button>
     </div>
   </div>
 </div>

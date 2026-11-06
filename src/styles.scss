@@ -1,39 +1,72 @@
 @use '@aws-amplify/ui-angular/theme.css';
 @use '@aws-amplify/ui/dist/styles.css';
 
+/* ==========================================================================
+   GrupLab — Design system
+   Inspirado en plataformas académicas (Google Classroom, Canvas, Notion):
+   superficies claras, jerarquía tipográfica marcada y acentos medidos.
+   ========================================================================== */
+
 :root {
+  color-scheme: light;
+
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --bg-app: #f4f6fb;
+  /* Superficies */
+  --bg-app: #f5f7fb;
   --surface-card: #ffffff;
   --surface-subtle: #f8fafc;
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --surface-sunken: #f1f5f9;
+  --border-subtle: #e7ecf3;
+  --border-strong: #d5deea;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  /* Texto */
+  --text-primary: #101828;
+  --text-secondary: #475467;
+  --text-muted: #667085;
 
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-500: #6366f1;
-  --brand-600: #4f46e5;
-  --brand-700: #4338ca;
+  /* Marca */
+  --brand-50: #eef4ff;
+  --brand-100: #dbe7ff;
+  --brand-200: #c3d6ff;
+  --brand-500: #3b6ef6;
+  --brand-600: #2557e0;
+  --brand-700: #1d46b8;
 
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -3px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 20px 40px -12px rgba(15, 23, 42, 0.16);
+  /* Semánticos */
+  --success-50: #ecfdf3;
+  --success-600: #079455;
+  --warning-50: #fffaeb;
+  --warning-600: #b54708;
+  --danger-50: #fef3f2;
+  --danger-600: #d92d20;
+  --info-50: #eff8ff;
+  --info-600: #175cd3;
+
+  /* Radios */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Sombras */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 6px 16px -4px rgba(16, 24, 40, 0.09), 0 2px 6px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 24px 48px -16px rgba(16, 24, 40, 0.22);
+  --shadow-brand: 0 8px 20px -6px rgba(37, 87, 224, 0.35);
 
   /* Amplify UI Theme Overrides */
-  --amplify-colors-brand-primary-10: #eef2ff;
-  --amplify-colors-brand-primary-80: #4f46e5;
-  --amplify-colors-brand-primary-90: #4338ca;
-  --amplify-colors-brand-primary-100: #3730a3;
-  --amplify-components-button-primary-background-color: #4f46e5;
-  --amplify-components-button-primary-hover-background-color: #4338ca;
+  --amplify-colors-brand-primary-10: #eef4ff;
+  --amplify-colors-brand-primary-80: #2557e0;
+  --amplify-colors-brand-primary-90: #1d46b8;
+  --amplify-colors-brand-primary-100: #173a99;
+  --amplify-components-button-primary-background-color: #2557e0;
+  --amplify-components-button-primary-hover-background-color: #1d46b8;
   --amplify-radii-small: 8px;
   --amplify-radii-medium: 10px;
   --amplify-radii-large: 14px;
@@ -52,14 +85,16 @@ body {
   min-height: 100vh;
   background-color: var(--bg-app);
   background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.07) 0px, transparent 50%);
+    radial-gradient(900px 480px at 8% -10%, rgba(59, 110, 246, 0.09), transparent 70%),
+    radial-gradient(760px 420px at 100% 0%, rgba(6, 182, 212, 0.06), transparent 70%);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -69,27 +104,57 @@ h4 {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
   color: var(--text-primary);
+  line-height: 1.25;
 }
 
-/* Global default button & input polish */
+p {
+  margin-top: 0;
+}
+
+a {
+  color: var(--brand-600);
+}
+
+::selection {
+  background: rgba(59, 110, 246, 0.2);
+}
+
+/* Foco accesible y consistente */
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* --------------------------------------------------------------------------
+   Botones base
+   -------------------------------------------------------------------------- */
 button {
   font-family: var(--font-sans);
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: #ffffff;
+  background: var(--surface-card);
   color: var(--text-secondary);
-  padding: 0.5rem 1rem;
+  padding: 0.52rem 0.95rem;
   font-size: 0.875rem;
+  line-height: 1.2;
   cursor: pointer;
-  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    transform 0.12s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.42rem;
+  box-shadow: var(--shadow-xs);
+  white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: #f8fafc;
+    background: var(--surface-subtle);
     border-color: var(--border-strong);
     color: var(--text-primary);
   }
@@ -101,28 +166,43 @@ button {
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
+    box-shadow: none;
   }
 }
 
+/* --------------------------------------------------------------------------
+   Formularios
+   -------------------------------------------------------------------------- */
 input:not([type='checkbox']):not([type='radio']),
 textarea,
 select {
   font-family: var(--font-sans);
   color: var(--text-primary);
-  background: #ffffff;
+  background: var(--surface-card);
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  padding: 0.62rem 0.8rem;
   font-size: 0.925rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  &::placeholder {
+    color: #98a2b3;
+  }
+
+  &:hover:not(:focus) {
+    border-color: #bac7d8;
+  }
 
   &:focus {
     outline: none;
     border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 4px rgba(59, 110, 246, 0.14);
   }
 }
 
@@ -137,7 +217,9 @@ input[type='radio'] {
   accent-color: var(--brand-600);
 }
 
-/* Amplify Authenticator Login wrapper */
+/* --------------------------------------------------------------------------
+   Login (Amplify Authenticator)
+   -------------------------------------------------------------------------- */
 [data-amplify-authenticator] {
   min-height: 100vh;
   display: flex;
@@ -147,17 +229,19 @@ input[type='radio'] {
 
   [data-amplify-router] {
     border: 1px solid var(--border-subtle);
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
-    background: #ffffff;
+    background: var(--surface-card);
   }
 }
 
-/* Custom Scrollbar */
+/* --------------------------------------------------------------------------
+   Scrollbar
+   -------------------------------------------------------------------------- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -165,21 +249,61 @@ input[type='radio'] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+  background: #c9d3e1;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--radius-pill);
 
   &:hover {
-    background: #94a3b8;
+    background: #a9b7c9;
+    background-clip: padding-box;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Utilidades
+   -------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @keyframes modalFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(10px) scale(0.985);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

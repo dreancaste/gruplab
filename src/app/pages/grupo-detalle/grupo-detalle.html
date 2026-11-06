@@ -1,61 +1,129 @@
 <div class="grupo-detalle">
-  <button class="btn-volver" (click)="volver()">
-    {{ grupo()?.materiaId ? '← Volver al aula' : '← Volver a Mis aulas' }}
-  </button>
+  <nav class="breadcrumb" aria-label="Ruta de navegación">
+    <button class="btn-volver" (click)="volver()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      {{ grupo()?.materiaId ? 'Volver al aula' : 'Volver a Mis aulas' }}
+    </button>
+    <span class="breadcrumb-sep" aria-hidden="true">/</span>
+    <span class="breadcrumb-current">{{ grupo()?.nombre || 'Tablero' }}</span>
+  </nav>
 
-  <p *ngIf="cargando()">Cargando…</p>
-  <p *ngIf="error()" class="error">{{ error() }}</p>
+  <div class="loading-state" *ngIf="cargando()" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    Cargando tablero…
+  </div>
+  <div *ngIf="error()" class="alert-error">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5M12 16.5v.5" stroke-linecap="round" />
+    </svg>
+    {{ error() }}
+  </div>
 
   <ng-container *ngIf="!cargando() && grupo()">
     <!-- CABECERA -->
     <header class="cabecera">
-      <div>
+      <div class="cabecera-main">
+        <div class="cabecera-top">
+          <span class="cabecera-kicker">{{
+            grupo()!.materiaId ? 'Tablero de grupo' : 'Tablero independiente'
+          }}</span>
+          <span class="status-chip"><span class="status-dot"></span> En curso</span>
+        </div>
         <h1>{{ grupo()!.nombre }}</h1>
-        <p class="meta">
-          {{ integrantesGrupo().length }} integrante{{
-            integrantesGrupo().length === 1 ? '' : 's'
-          }}
-          · {{ todasLasCards().length }} tarea{{
-            todasLasCards().length === 1 ? '' : 's'
-          }}
-        </p>
+        <div class="cabecera-meta">
+          <span class="meta-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="9" cy="8" r="3.2" />
+              <path d="M3.5 20a5.5 5.5 0 0 1 11 0" stroke-linecap="round" />
+              <path d="M16 11a3 3 0 1 0 0-6M17.5 20a5 5 0 0 0-2.2-4.1" stroke-linecap="round" />
+            </svg>
+            {{ integrantesGrupo().length }} integrante{{
+              integrantesGrupo().length === 1 ? '' : 's'
+            }}
+          </span>
+          <span class="meta-item">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"
+                stroke-linecap="round"
+              />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <path d="m9 13 2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            {{ todasLasCards().length }} tarea{{ todasLasCards().length === 1 ? '' : 's' }}
+          </span>
+          <span class="meta-item" *ngIf="hecho().length > 0">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path d="m5 12 4.5 4.5L19 7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            {{ hecho().length }} completada{{ hecho().length === 1 ? '' : 's' }}
+          </span>
+        </div>
       </div>
 
       <div class="acciones-cabecera">
-        <button class="btn-primario" (click)="abrirCrearCard()">
-          + Nueva tarea
-        </button>
+        <button class="btn-primario" (click)="abrirCrearCard()">+ Nueva tarea</button>
 
-        <button
-          *ngIf="esDocente()"
-          class="btn-calificar"
-          (click)="abrirCalificarGrupo()"
-        >
+        <button *ngIf="esDocente()" class="btn-calificar" (click)="abrirCalificarGrupo()">
           🎓 Calificar
         </button>
 
-        <button class="btn-secundario" (click)="abrirHistorial()">
-          📜 Historial
-        </button>
+        <button class="btn-secundario" (click)="abrirHistorial()">📜 Historial</button>
 
         <ng-container *ngIf="esAdminDelGrupo()">
           <button class="btn-secundario" (click)="abrirGestionarIntegrantes()">
             👥 Integrantes
           </button>
-          <button class="btn-secundario" (click)="abrirEditarNombre()">
-            ✏️ Nombre
-          </button>
+          <button class="btn-secundario" (click)="abrirEditarNombre()">✏️ Nombre</button>
           <button
             *ngIf="puedeEliminarGrupo"
             class="btn-peligro"
             (click)="abrirConfirmarEliminarGrupo()"
           >
-            🗑️ Eliminar grupo
+            Eliminar
           </button>
         </ng-container>
 
         <button
-          *ngIf="!esDocente() && userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)"
+          *ngIf="
+            !esDocente() &&
+            userId() &&
+            integrantesGrupo().includes(userId()!) &&
+            (!esAdminDelGrupo() || integrantesGrupo().length > 1)
+          "
           class="btn-secundario"
           (click)="abrirConfirmarSalir()"
         >
@@ -69,14 +137,12 @@
       class="solicitudes-banner"
       *ngIf="(esAdminDelGrupo() || esDocente()) && solicitudesPendientes().length > 0"
     >
-      <h3>🔔 Solicitudes para unirse al grupo ({{ solicitudesPendientes().length }})</h3>
+      <h3>Solicitudes para unirse al grupo ({{ solicitudesPendientes().length }})</h3>
       <div class="solicitudes-lista">
         <div class="solicitud-item" *ngFor="let solId of solicitudesPendientes()">
           <span class="solicitante-id">{{ nombreUsuario(solId) }}</span>
           <div class="solicitud-acciones">
-            <button class="btn-aceptar" (click)="responderSolicitud(solId, true)">
-              ✓ Aceptar
-            </button>
+            <button class="btn-aceptar" (click)="responderSolicitud(solId, true)">✓ Aceptar</button>
             <button class="btn-rechazar" (click)="responderSolicitud(solId, false)">
               ✕ Rechazar
             </button>
@@ -86,10 +152,7 @@
     </section>
 
     <!-- BANNER DE CALIFICACIÓN FINAL Y NOTA POR INTEGRANTE -->
-    <section
-      class="banner-calificacion"
-      *ngIf="calificacionGrupo() || esDocente()"
-    >
+    <section class="banner-calificacion" *ngIf="calificacionGrupo() || esDocente()">
       <div class="banner-calif-top">
         <div class="banner-calif-principal">
           <div class="nota-final-circulo">
@@ -99,7 +162,7 @@
             </strong>
           </div>
           <div class="banner-calif-info">
-            <h2>🎓 Calificación del grupo e integrantes</h2>
+            <h2>Calificación del grupo e integrantes</h2>
             <p class="banner-comentario" *ngIf="calificacionGrupo()?.comentario">
               “{{ calificacionGrupo()?.comentario }}”
             </p>
@@ -108,11 +171,7 @@
             </p>
           </div>
         </div>
-        <button
-          *ngIf="esDocente()"
-          class="btn-primario"
-          (click)="abrirCalificarGrupo()"
-        >
+        <button *ngIf="esDocente()" class="btn-primario" (click)="abrirCalificarGrupo()">
           {{ calificacionGrupo() ? '✏️ Editar calificación' : '🎓 Calificar grupo e integrantes' }}
         </button>
       </div>
@@ -122,14 +181,9 @@
           <span class="integrante-nombre">
             {{ uid === userId() ? 'Vos (' + nombreUsuario(uid) + ')' : nombreUsuario(uid) }}
           </span>
-          <span
-            class="integrante-nota"
-            [class.sin-nota]="notaDeIntegrante(uid) === null"
-          >
+          <span class="integrante-nota" [class.sin-nota]="notaDeIntegrante(uid) === null">
             {{
-              notaDeIntegrante(uid) !== null
-                ? 'Nota: ' + notaDeIntegrante(uid) + '/10'
-                : 'Sin nota'
+              notaDeIntegrante(uid) !== null ? 'Nota: ' + notaDeIntegrante(uid) + '/10' : 'Sin nota'
             }}
           </span>
         </div>
@@ -147,9 +201,17 @@
       <div class="aporte-lista" *ngIf="formulaParticipacion()">
         <article class="aporte-integrante" *ngFor="let metricas of metricasParticipacion()">
           <div class="aporte-nombre">
-            <strong>{{ metricas.usuarioId === userId() ? 'Vos (' + nombreUsuario(metricas.usuarioId) + ')' : nombreUsuario(metricas.usuarioId) }}</strong>
+            <strong>{{
+              metricas.usuarioId === userId()
+                ? 'Vos (' + nombreUsuario(metricas.usuarioId) + ')'
+                : nombreUsuario(metricas.usuarioId)
+            }}</strong>
             <span class="aporte-pct">
-              {{ metricas.participacion === null ? '—' : (metricas.participacion | number:'1.0-1') + '%' }}
+              {{
+                metricas.participacion === null
+                  ? '—'
+                  : (metricas.participacion | number: '1.0-1') + '%'
+              }}
             </span>
           </div>
           <div
@@ -168,8 +230,12 @@
     <!-- KANBAN -->
     <div class="kanban" cdkDropListGroup>
       <!-- BACKLOG -->
-      <div class="columna">
-        <h3 class="col-titulo">📋 Backlog ({{ backlog().length }})</h3>
+      <div class="columna col-backlog">
+        <div class="col-head">
+          <span class="col-dot" aria-hidden="true"></span>
+          <h3 class="col-titulo">Backlog</h3>
+          <span class="col-count">{{ backlog().length }}</span>
+        </div>
         <div
           class="col-contenido"
           cdkDropList
@@ -178,6 +244,7 @@
           (cdkDropListDropped)="drop($event, 'backlog')"
           id="backlog"
         >
+          <p class="col-empty" *ngIf="backlog().length === 0">Arrastrá tareas acá</p>
           <div class="card" *ngFor="let card of backlog()" cdkDrag>
             <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
@@ -185,12 +252,13 @@
                 {{ card.descripcion }}
               </p>
               <p class="card-detalles">
-                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ nombresAsignados(card) }}
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }} · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
               <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
-              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">
+                ⏰ Vence pronto
+              </p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -208,8 +276,18 @@
               </p>
             </div>
             <div class="card-acciones">
-              <input #backlogInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(backlogInput)" title="Adjuntar archivo">
+              <input
+                #backlogInput
+                type="file"
+                style="display: none"
+                (change)="subirArchivo(card, $event)"
+              />
+              <button
+                class="btn-mini"
+                type="button"
+                (click)="$event.stopPropagation(); abrirSelectorArchivo(backlogInput)"
+                title="Adjuntar archivo"
+              >
                 📎
               </button>
               <button
@@ -220,10 +298,18 @@
               >
                 🏷️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); abrirEditarCard(card)"
+                title="Editar"
+              >
                 ✏️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); eliminarCard(card)"
+                title="Eliminar"
+              >
                 🗑️
               </button>
             </div>
@@ -232,8 +318,12 @@
       </div>
 
       <!-- EN PROGRESO -->
-      <div class="columna">
-        <h3 class="col-titulo">🚧 En progreso ({{ progreso().length }})</h3>
+      <div class="columna col-progreso">
+        <div class="col-head">
+          <span class="col-dot" aria-hidden="true"></span>
+          <h3 class="col-titulo">En progreso</h3>
+          <span class="col-count">{{ progreso().length }}</span>
+        </div>
         <div
           class="col-contenido"
           cdkDropList
@@ -242,6 +332,7 @@
           (cdkDropListDropped)="drop($event, 'progreso')"
           id="progreso"
         >
+          <p class="col-empty" *ngIf="progreso().length === 0">Sin tareas en curso</p>
           <div class="card" *ngFor="let card of progreso()" cdkDrag>
             <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
@@ -249,12 +340,13 @@
                 {{ card.descripcion }}
               </p>
               <p class="card-detalles">
-                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ nombresAsignados(card) }}
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }} · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
               <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
-              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">
+                ⏰ Vence pronto
+              </p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -272,8 +364,18 @@
               </p>
             </div>
             <div class="card-acciones">
-              <input #progresoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(progresoInput)" title="Adjuntar archivo">
+              <input
+                #progresoInput
+                type="file"
+                style="display: none"
+                (change)="subirArchivo(card, $event)"
+              />
+              <button
+                class="btn-mini"
+                type="button"
+                (click)="$event.stopPropagation(); abrirSelectorArchivo(progresoInput)"
+                title="Adjuntar archivo"
+              >
                 📎
               </button>
               <button
@@ -284,10 +386,18 @@
               >
                 🏷️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); abrirEditarCard(card)"
+                title="Editar"
+              >
                 ✏️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); eliminarCard(card)"
+                title="Eliminar"
+              >
                 🗑️
               </button>
             </div>
@@ -296,8 +406,12 @@
       </div>
 
       <!-- REVISIÓN -->
-      <div class="columna">
-        <h3 class="col-titulo">👀 Revisión ({{ revision().length }})</h3>
+      <div class="columna col-revision">
+        <div class="col-head">
+          <span class="col-dot" aria-hidden="true"></span>
+          <h3 class="col-titulo">Revisión</h3>
+          <span class="col-count">{{ revision().length }}</span>
+        </div>
         <div
           class="col-contenido"
           cdkDropList
@@ -306,6 +420,7 @@
           (cdkDropListDropped)="drop($event, 'revision')"
           id="revision"
         >
+          <p class="col-empty" *ngIf="revision().length === 0">Sin entregas para revisar</p>
           <div class="card" *ngFor="let card of revision()" cdkDrag>
             <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
@@ -313,12 +428,13 @@
                 {{ card.descripcion }}
               </p>
               <p class="card-detalles">
-                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ nombresAsignados(card) }}
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }} · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
               <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
-              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">
+                ⏰ Vence pronto
+              </p>
               <p class="card-detalles" *ngIf="card.revisadaPor">
                 Revisada por {{ nombreUsuario(card.revisadaPor) }}
               </p>
@@ -342,8 +458,18 @@
               </p>
             </div>
             <div class="card-acciones">
-              <input #revisionInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(revisionInput)" title="Adjuntar archivo">
+              <input
+                #revisionInput
+                type="file"
+                style="display: none"
+                (change)="subirArchivo(card, $event)"
+              />
+              <button
+                class="btn-mini"
+                type="button"
+                (click)="$event.stopPropagation(); abrirSelectorArchivo(revisionInput)"
+                title="Adjuntar archivo"
+              >
                 📎
               </button>
               <button
@@ -362,10 +488,18 @@
               >
                 🔎
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); abrirEditarCard(card)"
+                title="Editar"
+              >
                 ✏️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); eliminarCard(card)"
+                title="Eliminar"
+              >
                 🗑️
               </button>
             </div>
@@ -374,8 +508,12 @@
       </div>
 
       <!-- HECHO -->
-      <div class="columna">
-        <h3 class="col-titulo">✅ Hecho ({{ hecho().length }})</h3>
+      <div class="columna col-hecho">
+        <div class="col-head">
+          <span class="col-dot" aria-hidden="true"></span>
+          <h3 class="col-titulo">Hecho</h3>
+          <span class="col-count">{{ hecho().length }}</span>
+        </div>
         <div
           class="col-contenido"
           cdkDropList
@@ -384,6 +522,7 @@
           (cdkDropListDropped)="drop($event, 'hecho')"
           id="hecho"
         >
+          <p class="col-empty" *ngIf="hecho().length === 0">Las tareas terminadas aparecen acá</p>
           <div class="card" *ngFor="let card of hecho()" cdkDrag>
             <div class="card-body" (click)="abrirDetalleCard(card)">
               <p class="card-titulo">{{ card.titulo }}</p>
@@ -391,12 +530,13 @@
                 {{ card.descripcion }}
               </p>
               <p class="card-detalles">
-                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }}
-                · {{ nombresAsignados(card) }}
+                Esfuerzo {{ card.pesoEsfuerzo ?? 1 }} · {{ nombresAsignados(card) }}
                 <span *ngIf="card.fechaLimite"> · Límite {{ card.fechaLimite }}</span>
               </p>
               <p class="alerta-vencimiento vencida" *ngIf="esVencida(card)">⚠️ Vencida</p>
-              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">⏰ Vence pronto</p>
+              <p class="alerta-vencimiento proxima" *ngIf="esProximaAVencer(card)">
+                ⏰ Vence pronto
+              </p>
               <div class="adjuntos-chips" *ngIf="card.adjuntos?.length">
                 <span *ngFor="let key of card.adjuntos" class="chip-adjunto">
                   {{ iconoAdjunto(key || '') }} {{ nombreAdjunto(key || '') }}
@@ -414,14 +554,32 @@
               </p>
             </div>
             <div class="card-acciones">
-              <input #hechoInput type="file" style="display:none" (change)="subirArchivo(card, $event)" />
-              <button class="btn-mini" type="button" (click)="$event.stopPropagation(); abrirSelectorArchivo(hechoInput)" title="Adjuntar archivo">
+              <input
+                #hechoInput
+                type="file"
+                style="display: none"
+                (change)="subirArchivo(card, $event)"
+              />
+              <button
+                class="btn-mini"
+                type="button"
+                (click)="$event.stopPropagation(); abrirSelectorArchivo(hechoInput)"
+                title="Adjuntar archivo"
+              >
                 📎
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); abrirEditarCard(card)" title="Editar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); abrirEditarCard(card)"
+                title="Editar"
+              >
                 ✏️
               </button>
-              <button class="btn-mini" (click)="$event.stopPropagation(); eliminarCard(card)" title="Eliminar">
+              <button
+                class="btn-mini"
+                (click)="$event.stopPropagation(); eliminarCard(card)"
+                title="Eliminar"
+              >
                 🗑️
               </button>
               <button
@@ -441,10 +599,20 @@
     <!-- ACCIONES AL PIE (solo alumnos) -->
     <div
       class="acciones-pie"
-      *ngIf="!esDocente() && ((userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)) || puedeEliminarGrupo)"
+      *ngIf="
+        !esDocente() &&
+        ((userId() &&
+          integrantesGrupo().includes(userId()!) &&
+          (!esAdminDelGrupo() || integrantesGrupo().length > 1)) ||
+          puedeEliminarGrupo)
+      "
     >
       <button
-        *ngIf="userId() && integrantesGrupo().includes(userId()!) && (!esAdminDelGrupo() || integrantesGrupo().length > 1)"
+        *ngIf="
+          userId() &&
+          integrantesGrupo().includes(userId()!) &&
+          (!esAdminDelGrupo() || integrantesGrupo().length > 1)
+        "
         class="btn-secundario"
         (click)="abrirConfirmarSalir()"
       >
@@ -479,7 +647,11 @@
     <div class="detalle-meta">
       <div>
         <span class="meta-label">Esfuerzo</span>
-        <span>{{ cardDetalle()!.pesoEsfuerzo ?? 1 }} punto{{ (cardDetalle()!.pesoEsfuerzo ?? 1) === 1 ? '' : 's' }}</span>
+        <span
+          >{{ cardDetalle()!.pesoEsfuerzo ?? 1 }} punto{{
+            (cardDetalle()!.pesoEsfuerzo ?? 1) === 1 ? '' : 's'
+          }}</span
+        >
       </div>
       <div>
         <span class="meta-label">Asignados</span>
@@ -511,10 +683,7 @@
       <div *ngIf="cargandoUrlsDetalle()" class="cargando-adjuntos">Cargando adjuntos…</div>
 
       <div class="adjuntos-grid" *ngIf="!cargandoUrlsDetalle()">
-        <div
-          *ngFor="let key of cardDetalle()!.adjuntos"
-          class="adjunto-item"
-        >
+        <div *ngFor="let key of cardDetalle()!.adjuntos" class="adjunto-item">
           <!-- Vista previa imagen -->
           <ng-container *ngIf="esImagen(key || '') && adjuntosUrls()[key || '']">
             <img
@@ -533,11 +702,7 @@
 
           <!-- Icono para no-imágenes -->
           <ng-container *ngIf="!esImagen(key || '')">
-            <div
-              class="adjunto-icono"
-              (click)="abrirAdjunto(key || '')"
-              title="Descargar / abrir"
-            >
+            <div class="adjunto-icono" (click)="abrirAdjunto(key || '')" title="Descargar / abrir">
               {{ iconoAdjunto(key || '') }}
             </div>
           </ng-container>
@@ -559,7 +724,12 @@
     </div>
 
     <div class="detalle-acciones">
-      <input #detalleInput type="file" style="display:none" (change)="subirArchivo(cardDetalle()!, $event)" />
+      <input
+        #detalleInput
+        type="file"
+        style="display: none"
+        (change)="subirArchivo(cardDetalle()!, $event)"
+      />
       <button
         class="btn-secundario"
         (click)="abrirSelectorArchivo(detalleInput)"
@@ -619,7 +789,13 @@
         </select>
         <input
           *ngIf="cardPlanificacionBloqueada"
-          [value]="cardPesoEsfuerzo === 1 ? '1 · Chico' : cardPesoEsfuerzo === 3 ? '3 · Mediano' : '5 · Grande'"
+          [value]="
+            cardPesoEsfuerzo === 1
+              ? '1 · Chico'
+              : cardPesoEsfuerzo === 3
+                ? '3 · Mediano'
+                : '5 · Grande'
+          "
           readonly
         />
       </label>
@@ -633,9 +809,11 @@
     <fieldset class="asignados-selector" *ngIf="!esTableroSolo">
       <legend>Asignar a integrantes</legend>
       <p class="ayuda" *ngIf="integrantesGrupo().length === 0">
-        {{ esTableroIndependiente
+        {{
+          esTableroIndependiente
             ? 'No hay integrantes en este tablero.'
-            : 'Este grupo todavía no tiene alumnos inscriptos. Podés crear la tarea para el backlog y asignar responsables cuando se sumen integrantes.' }}
+            : 'Este grupo todavía no tiene alumnos inscriptos. Podés crear la tarea para el backlog y asignar responsables cuando se sumen integrantes.'
+        }}
       </p>
       <label *ngFor="let integranteId of integrantesGrupo()" class="asignado-item">
         <input
@@ -644,7 +822,11 @@
           [checked]="asignadosSeleccionados().includes(integranteId)"
           (change)="toggleAsignado(integranteId)"
         />
-        {{ integranteId === userId() ? 'Vos (' + nombreUsuario(integranteId) + ')' : nombreUsuario(integranteId) }}
+        {{
+          integranteId === userId()
+            ? 'Vos (' + nombreUsuario(integranteId) + ')'
+            : nombreUsuario(integranteId)
+        }}
       </label>
     </fieldset>
 
@@ -664,7 +846,7 @@
         [disabled]="guardandoCard()"
         (click)="guardarCard()"
       >
-        {{ guardandoCard() ? 'Guardando…' : (modoEdicionCard() ? 'Guardar' : 'Crear') }}
+        {{ guardandoCard() ? 'Guardando…' : modoEdicionCard() ? 'Guardar' : 'Crear' }}
       </button>
     </div>
   </div>
@@ -760,13 +942,7 @@
 
     <label>
       Nota final del grupo (0 a 10)
-      <input
-        type="number"
-        min="0"
-        max="10"
-        step="0.5"
-        [(ngModel)]="notaFinalGrupoInput"
-      />
+      <input type="number" min="0" max="10" step="0.5" [(ngModel)]="notaFinalGrupoInput" />
     </label>
 
     <div class="calificar-integrantes-box" *ngIf="integrantesGrupo().length > 0">
@@ -828,8 +1004,8 @@
     <!-- Tablero independiente -->
     <ng-container *ngIf="esTableroIndependiente">
       <p>
-        Este tablero es independiente. Para sumar personas, compartiles el
-        código y ellos se unen desde
+        Este tablero es independiente. Para sumar personas, compartiles el código y ellos se unen
+        desde
         <strong>Mis aulas → Mis tableros → Unirme con código</strong>.
       </p>
       <div class="codigo-destacado">
@@ -842,21 +1018,25 @@
           *ngFor="let miembroId of integrantesGrupo()"
         >
           <span class="alumno-id">
-            {{ miembroId === userId() ? 'Vos (' + nombreUsuario(miembroId) + ')' : nombreUsuario(miembroId) }}
+            {{
+              miembroId === userId()
+                ? 'Vos (' + nombreUsuario(miembroId) + ')'
+                : nombreUsuario(miembroId)
+            }}
           </span>
         </div>
       </div>
       <div class="modal-acciones">
-        <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">
-          Cerrar
-        </button>
+        <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">Cerrar</button>
       </div>
     </ng-container>
 
     <!-- Grupo dentro de un aula -->
     <ng-container *ngIf="!esTableroIndependiente">
       <div class="integrantes-lista">
-        <p class="titulo-lista">Integrantes actuales del grupo ({{ integrantesGrupo().length }}):</p>
+        <p class="titulo-lista">
+          Integrantes actuales del grupo ({{ integrantesGrupo().length }}):
+        </p>
         <p *ngIf="integrantesGrupo().length === 0" class="ayuda">
           Este grupo no tiene integrantes todavía.
         </p>
@@ -865,7 +1045,11 @@
           *ngFor="let miembroId of integrantesGrupo()"
         >
           <span class="alumno-id">
-            {{ miembroId === userId() ? 'Vos (' + nombreUsuario(miembroId) + ')' : nombreUsuario(miembroId) }}
+            {{
+              miembroId === userId()
+                ? 'Vos (' + nombreUsuario(miembroId) + ')'
+                : nombreUsuario(miembroId)
+            }}
           </span>
           <button
             *ngIf="esDocente()"
@@ -881,7 +1065,8 @@
       <div class="integrantes-lista">
         <p class="titulo-lista">Compañeros disponibles en el aula para agregar:</p>
         <p *ngIf="!esDocente()" class="ayuda">
-          Podés sumar compañeros disponibles. Solo los docentes pueden eliminar integrantes del grupo.
+          Podés sumar compañeros disponibles. Solo los docentes pueden eliminar integrantes del
+          grupo.
         </p>
         <p *ngIf="alumnosDisponiblesParaAgregar().length === 0" class="ayuda">
           No hay otros alumnos disponibles sin grupo en el aula.
@@ -902,39 +1087,25 @@
       </div>
 
       <div class="modal-acciones">
-        <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">
-          Cerrar
-        </button>
+        <button class="btn-primario" (click)="cerrarGestionarIntegrantes()">Cerrar</button>
       </div>
     </ng-container>
   </div>
 </div>
 
 <!-- CONFIRMAR SALIR DEL GRUPO -->
-<div
-  class="modal-backdrop"
-  *ngIf="mostrarConfirmarSalir()"
-  (click)="cancelarSalir()"
->
+<div class="modal-backdrop" *ngIf="mostrarConfirmarSalir()" (click)="cancelarSalir()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>Salir del grupo</h3>
     <p>
       ¿Seguro que querés salir de <strong>{{ grupo()?.nombre }}</strong
       >?
     </p>
-    <p
-      class="ayuda"
-      *ngIf="esAdminDelGrupo() && integrantesGrupo().length > 1"
-    >
-      Como sos el admin, el rol va a pasar automáticamente al siguiente
-      integrante.
+    <p class="ayuda" *ngIf="esAdminDelGrupo() && integrantesGrupo().length > 1">
+      Como sos el admin, el rol va a pasar automáticamente al siguiente integrante.
     </p>
-    <p
-      class="ayuda"
-      *ngIf="esAdminDelGrupo() && integrantesGrupo().length === 1"
-    >
-      Sos el único integrante. Si salís, el grupo y sus cards se van a
-      eliminar.
+    <p class="ayuda" *ngIf="esAdminDelGrupo() && integrantesGrupo().length === 1">
+      Sos el único integrante. Si salís, el grupo y sus cards se van a eliminar.
     </p>
     <div class="modal-acciones">
       <button (click)="cancelarSalir()">Cancelar</button>
@@ -958,19 +1129,13 @@
     </p>
     <div class="modal-acciones">
       <button (click)="cancelarEliminarGrupo()">Cancelar</button>
-      <button class="btn-peligro" (click)="eliminarGrupoCompleto()">
-        Eliminar
-      </button>
+      <button class="btn-peligro" (click)="eliminarGrupoCompleto()">Eliminar</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL HISTORIAL DE ACTIVIDAD -->
-<div
-  class="modal-backdrop"
-  *ngIf="mostrarModalLogs()"
-  (click)="cerrarHistorial()"
->
+<div class="modal-backdrop" *ngIf="mostrarModalLogs()" (click)="cerrarHistorial()">
   <div class="modal modal-historial" (click)="$event.stopPropagation()">
     <button class="modal-cerrar" (click)="cerrarHistorial()">✕</button>
     <h3>📜 Historial de actividad del grupo</h3>
@@ -995,13 +1160,8 @@
   </div>
 </div>
 
-
 <!-- MODAL DE CONFIRMACIÓN (reemplaza confirm nativo del navegador) -->
-<div
-  class="modal-backdrop"
-  *ngIf="confirmacionPendiente()"
-  (click)="cerrarConfirmacionPendiente()"
->
+<div class="modal-backdrop" *ngIf="confirmacionPendiente()" (click)="cerrarConfirmacionPendiente()">
   <div class="modal" (click)="$event.stopPropagation()">
     <h3>⚠️ {{ confirmacionPendiente()!.titulo }}</h3>
     <p>{{ confirmacionPendiente()!.mensaje }}</p>

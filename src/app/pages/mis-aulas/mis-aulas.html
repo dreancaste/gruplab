@@ -1,101 +1,373 @@
 <div class="mis-aulas">
-  <h1>Mis aulas</h1>
+  <header class="page-head">
+    <div class="page-head-copy">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> Espacio de trabajo</span>
+      <h1>{{ nombreCorto ? saludo + ', ' + nombreCorto : 'Mis aulas' }}</h1>
+      <p class="page-subtitle">Organizá tus aulas, grupos y tableros en un solo lugar.</p>
+    </div>
 
-  <p *ngIf="cargando()">Cargando…</p>
+    <div class="page-head-actions">
+      <button class="btn-secundario" type="button" (click)="abrirUnirse()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          aria-hidden="true"
+        >
+          <path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.1" stroke-linecap="round" />
+          <path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1" stroke-linecap="round" />
+        </svg>
+        Unirme con código
+      </button>
+      <button class="btn-primario" type="button" (click)="abrirCrear()">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+        </svg>
+        Crear aula
+      </button>
+    </div>
+  </header>
 
-  <p *ngIf="error()" class="error">{{ error() }}</p>
+  <div class="alert-error" *ngIf="error()">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5M12 16.5v.5" stroke-linecap="round" />
+    </svg>
+    {{ error() }}
+  </div>
+
+  <!-- SKELETON DE CARGA -->
+  <div class="loading-wrap" *ngIf="cargando()" aria-live="polite" aria-busy="true">
+    <span class="sr-only">Cargando tus aulas…</span>
+    <div class="stats-grid">
+      <div class="skeleton skeleton-stat" *ngFor="let i of [1, 2, 3]"></div>
+    </div>
+    <div class="skeleton skeleton-panel"></div>
+    <div class="skeleton skeleton-panel"></div>
+  </div>
 
   <ng-container *ngIf="!cargando()">
+    <!-- RESUMEN -->
+    <section class="stats-grid" aria-label="Resumen">
+      <article class="stat-card">
+        <span class="stat-icon stat-icon-indigo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23V5.5Z" />
+            <path d="M8 7h7M8 11h5" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="stat-body">
+          <span class="stat-label">Aulas como docente</span>
+          <strong class="stat-value">{{ materiasComoDocente.length }}</strong>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-icon stat-icon-emerald" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="m2 9 10-5 10 5-10 5L2 9Z" stroke-linejoin="round" />
+            <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="stat-body">
+          <span class="stat-label">Aulas como alumno</span>
+          <strong class="stat-value">{{ materiasComoAlumno.length }}</strong>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-icon stat-icon-cyan" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="5.5" height="16" rx="1.5" />
+            <rect x="9.5" y="4" width="5.5" height="10" rx="1.5" />
+            <rect x="16" y="4" width="5" height="13" rx="1.5" />
+          </svg>
+        </span>
+        <div class="stat-body">
+          <span class="stat-label">Tableros propios</span>
+          <strong class="stat-value">{{ misTableros().length }}</strong>
+        </div>
+      </article>
+    </section>
+
     <!-- SECCIÓN DOCENTE -->
     <section *ngIf="materiasComoDocente.length > 0 || userId()">
       <div class="header-seccion">
-        <h2>Como docente</h2>
-        <button class="btn-primario" (click)="abrirCrear()">+ Crear aula</button>
+        <div class="section-title">
+          <span class="section-icon section-icon-indigo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23V5.5Z" />
+              <path d="M8 7h7M8 11h5" stroke-linecap="round" />
+            </svg>
+          </span>
+          <div>
+            <h2>
+              Aulas como docente <span class="count-pill">{{ materiasComoDocente.length }}</span>
+            </h2>
+            <p class="section-sub">Aulas que administrás o donde dictás clases.</p>
+          </div>
+        </div>
+        <button class="btn-secundario btn-compact" type="button" (click)="abrirCrear()">
+          + Crear aula
+        </button>
       </div>
 
-      <p *ngIf="materiasComoDocente.length === 0" class="vacio">
-        Todavía no creaste ninguna aula.
-      </p>
+      <div class="empty-state" *ngIf="materiasComoDocente.length === 0">
+        <span class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z" stroke-linejoin="round" />
+            <path d="M4 7l8 4 8-4M12 11v10" />
+          </svg>
+        </span>
+        <div>
+          <strong>Todavía no creaste ninguna aula</strong>
+          <p>Creá tu primera aula, compartí el código y sumá a tus estudiantes.</p>
+        </div>
+        <button class="btn-primario" type="button" (click)="abrirCrear()">
+          Crear mi primera aula
+        </button>
+      </div>
 
       <div class="grid-aulas">
-        <div
+        <article
           class="card-aula"
           *ngFor="let m of materiasComoDocente"
+          role="button"
+          tabindex="0"
           (click)="abrirAula(m.id)"
+          (keydown.enter)="abrirAula(m.id)"
+          (keydown.space)="abrirAula(m.id); $event.preventDefault()"
         >
-          <h3>{{ m.nombre }}</h3>
-          <p *ngIf="m.descripcion">{{ m.descripcion }}</p>
-          <div class="card-footer">
+          <div class="card-top">
+            <span class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23V5.5Z" />
+                <path d="M8 7h7M8 11h5" stroke-linecap="round" />
+              </svg>
+            </span>
             <span class="badge">{{
               m.creadorId === userId() || m.admins?.includes(userId()!) ? 'Admin' : 'Profesor'
             }}</span>
-            <span class="codigo">Código: {{ m.codigoInvitacion }}</span>
           </div>
-        </div>
+          <h3>{{ m.nombre }}</h3>
+          <p *ngIf="m.descripcion" class="card-desc">{{ m.descripcion }}</p>
+          <div class="card-footer">
+            <span class="codigo" [title]="'Código de invitación: ' + m.codigoInvitacion">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="12" r="3" />
+                <path d="M11 12h9M17 12v3M14 12v2" stroke-linecap="round" />
+              </svg>
+              {{ m.codigoInvitacion }}
+            </span>
+            <div class="card-footer-actions">
+              <button
+                class="btn-copiar"
+                type="button"
+                [title]="
+                  codigoCopiado() === m.codigoInvitacion ? 'Código copiado' : 'Copiar código'
+                "
+                (click)="copiarCodigo(m.codigoInvitacion, $event)"
+                (keydown.enter)="$event.stopPropagation()"
+                (keydown.space)="$event.stopPropagation()"
+              >
+                <span *ngIf="codigoCopiado() !== m.codigoInvitacion">Copiar</span>
+                <span *ngIf="codigoCopiado() === m.codigoInvitacion">✓ Copiado</span>
+              </button>
+              <span class="card-arrow" aria-hidden="true">→</span>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
 
-        <!-- SECCIÓN TABLEROS INDEPENDIENTES -->
+    <!-- SECCIÓN TABLEROS INDEPENDIENTES -->
     <section>
       <div class="header-seccion">
-        <h2>Mis tableros</h2>
+        <div class="section-title">
+          <span class="section-icon section-icon-cyan" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="4" width="5.5" height="16" rx="1.5" />
+              <rect x="9.5" y="4" width="5.5" height="10" rx="1.5" />
+              <rect x="16" y="4" width="5" height="13" rx="1.5" />
+            </svg>
+          </span>
+          <div>
+            <h2>
+              Mis tableros <span class="count-pill">{{ misTableros().length }}</span>
+            </h2>
+            <p class="section-sub">Espacios de trabajo que no dependen de un aula.</p>
+          </div>
+        </div>
         <div class="acciones-seccion">
-          <button class="btn-secundario" (click)="abrirUnirseTablero()">
+          <button class="btn-secundario btn-compact" type="button" (click)="abrirUnirseTablero()">
             + Unirme con código
           </button>
-          <button class="btn-primario" (click)="abrirCrearTablero()">
+          <button class="btn-primario btn-compact" type="button" (click)="abrirCrearTablero()">
             + Crear tablero
           </button>
         </div>
       </div>
 
-      <p *ngIf="misTableros().length === 0" class="vacio">
-        Todavía no tenés tableros independientes. Podés crear uno para
-        organizar tu trabajo sin depender de una materia.
-      </p>
+      <div class="empty-state" *ngIf="misTableros().length === 0">
+        <span class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3" y="4" width="5.5" height="16" rx="1.5" />
+            <rect x="9.5" y="4" width="5.5" height="10" rx="1.5" />
+            <rect x="16" y="4" width="5" height="13" rx="1.5" />
+          </svg>
+        </span>
+        <div>
+          <strong>Todavía no tenés tableros independientes</strong>
+          <p>Creá uno para organizar tu trabajo sin depender de una materia.</p>
+        </div>
+        <button class="btn-primario" type="button" (click)="abrirCrearTablero()">
+          Crear tablero
+        </button>
+      </div>
 
       <div class="grid-aulas">
-        <div
-          class="card-aula"
+        <article
+          class="card-aula card-tablero"
           *ngFor="let t of misTableros()"
+          role="button"
+          tabindex="0"
           (click)="abrirTablero(t.id)"
+          (keydown.enter)="abrirTablero(t.id)"
+          (keydown.space)="abrirTablero(t.id); $event.preventDefault()"
         >
-          <h3>{{ t.nombre }}</h3>
-          <div class="card-footer">
-            <span class="badge">{{
+          <div class="card-top">
+            <span class="card-icon card-icon-cyan" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <rect x="3" y="4" width="5.5" height="16" rx="1.5" />
+                <rect x="9.5" y="4" width="5.5" height="10" rx="1.5" />
+                <rect x="16" y="4" width="5" height="13" rx="1.5" />
+              </svg>
+            </span>
+            <span class="badge badge-neutral">{{
               t.adminId === userId() ? 'Admin' : 'Miembro'
             }}</span>
-            <span class="codigo">Código: {{ t.codigoInvitacion }}</span>
           </div>
-        </div>
+          <h3>{{ t.nombre }}</h3>
+          <p class="card-desc">Tablero independiente</p>
+          <div class="card-footer">
+            <span class="codigo" [title]="'Código del tablero: ' + t.codigoInvitacion">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="12" r="3" />
+                <path d="M11 12h9M17 12v3M14 12v2" stroke-linecap="round" />
+              </svg>
+              {{ t.codigoInvitacion }}
+            </span>
+            <div class="card-footer-actions">
+              <button
+                class="btn-copiar"
+                type="button"
+                [title]="
+                  codigoCopiado() === t.codigoInvitacion ? 'Código copiado' : 'Copiar código'
+                "
+                (click)="copiarCodigo(t.codigoInvitacion, $event)"
+                (keydown.enter)="$event.stopPropagation()"
+                (keydown.space)="$event.stopPropagation()"
+              >
+                <span *ngIf="codigoCopiado() !== t.codigoInvitacion">Copiar</span>
+                <span *ngIf="codigoCopiado() === t.codigoInvitacion">✓ Copiado</span>
+              </button>
+              <span class="card-arrow" aria-hidden="true">→</span>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
 
     <!-- SECCIÓN ALUMNO -->
     <section>
       <div class="header-seccion">
-        <h2>Como alumno</h2>
-        <button class="btn-secundario" (click)="abrirUnirse()">
+        <div class="section-title">
+          <span class="section-icon section-icon-emerald" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="m2 9 10-5 10 5-10 5L2 9Z" stroke-linejoin="round" />
+              <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" stroke-linecap="round" />
+            </svg>
+          </span>
+          <div>
+            <h2>
+              Aulas como alumno <span class="count-pill">{{ materiasComoAlumno.length }}</span>
+            </h2>
+            <p class="section-sub">Aulas a las que te uniste con un código de invitación.</p>
+          </div>
+        </div>
+        <button class="btn-secundario btn-compact" type="button" (click)="abrirUnirse()">
           + Unirme con código
         </button>
       </div>
 
-      <p *ngIf="materiasComoAlumno.length === 0" class="vacio">
-        Todavía no estás inscripto en ninguna aula como alumno.
-      </p>
+      <div class="empty-state" *ngIf="materiasComoAlumno.length === 0">
+        <span class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="m2 9 10-5 10 5-10 5L2 9Z" stroke-linejoin="round" />
+            <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div>
+          <strong>Todavía no estás inscripto en ninguna aula</strong>
+          <p>Pedile el código de invitación a tu docente y unite en segundos.</p>
+        </div>
+        <button class="btn-primario" type="button" (click)="abrirUnirse()">
+          Unirme con código
+        </button>
+      </div>
 
       <div class="grid-aulas">
-        <div
-          class="card-aula"
+        <article
+          class="card-aula card-alumno"
           *ngFor="let m of materiasComoAlumno"
+          role="button"
+          tabindex="0"
           (click)="abrirAula(m.id)"
+          (keydown.enter)="abrirAula(m.id)"
+          (keydown.space)="abrirAula(m.id); $event.preventDefault()"
         >
-          <h3>{{ m.nombre }}</h3>
-          <p *ngIf="m.descripcion">{{ m.descripcion }}</p>
-          <div class="card-footer">
-            <span class="badge">Alumno</span>
+          <div class="card-top">
+            <span class="card-icon card-icon-emerald" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="m2 9 10-5 10 5-10 5L2 9Z" stroke-linejoin="round" />
+                <path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="badge badge-neutral">Alumno</span>
           </div>
-        </div>
+          <h3>{{ m.nombre }}</h3>
+          <p class="card-desc" *ngIf="m.descripcion">{{ m.descripcion }}</p>
+          <p class="card-desc" *ngIf="!m.descripcion">Sin descripción.</p>
+          <div class="card-footer">
+            <span class="codigo codigo-suave">Aula</span>
+            <span class="card-arrow" aria-hidden="true">→</span>
+          </div>
+        </article>
       </div>
     </section>
   </ng-container>
@@ -103,8 +375,22 @@
 
 <!-- MODAL CREAR AULA -->
 <div class="modal-backdrop" *ngIf="mostrarCrear()" (click)="cerrarCrear()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>Crear aula</h3>
+  <div
+    class="modal"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-crear-aula"
+  >
+    <div class="modal-head">
+      <div>
+        <span class="modal-eyebrow">Nueva aula</span>
+        <h3 id="titulo-crear-aula">Crear aula</h3>
+      </div>
+      <button class="modal-close" type="button" aria-label="Cerrar" (click)="cerrarCrear()">
+        ×
+      </button>
+    </div>
     <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Nombre
@@ -112,16 +398,20 @@
         [(ngModel)]="nuevaNombre"
         (keydown.enter)="crearAula()"
         placeholder="Ej: Programación 1"
+        autocomplete="off"
       />
     </label>
     <label>
-      Descripción (opcional)
-      <textarea [(ngModel)]="nuevaDescripcion"></textarea>
+      Descripción <span class="label-hint">(opcional)</span>
+      <textarea
+        [(ngModel)]="nuevaDescripcion"
+        placeholder="Contá de qué se trata el aula, horario, modalidad…"
+      ></textarea>
     </label>
     <div class="modal-acciones">
       <button type="button" (click)="cerrarCrear()">Cancelar</button>
       <button type="button" class="btn-primario" [disabled]="guardando()" (click)="crearAula()">
-        {{ guardando() ? 'Creando…' : 'Crear' }}
+        {{ guardando() ? 'Creando…' : 'Crear aula' }}
       </button>
     </div>
   </div>
@@ -129,8 +419,22 @@
 
 <!-- MODAL UNIRSE CON CÓDIGO -->
 <div class="modal-backdrop" *ngIf="mostrarUnirse()" (click)="cerrarUnirse()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>Unirme a un aula</h3>
+  <div
+    class="modal"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-unirse-aula"
+  >
+    <div class="modal-head">
+      <div>
+        <span class="modal-eyebrow">Invitación</span>
+        <h3 id="titulo-unirse-aula">Unirme a un aula</h3>
+      </div>
+      <button class="modal-close" type="button" aria-label="Cerrar" (click)="cerrarUnirse()">
+        ×
+      </button>
+    </div>
     <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Código de invitación
@@ -138,12 +442,19 @@
         [(ngModel)]="codigoIngresado"
         (keydown.enter)="unirseConCodigo()"
         placeholder="Ej: A3F9K2"
-        style="text-transform: uppercase"
+        autocomplete="off"
+        class="input-codigo"
       />
     </label>
+    <p class="ayuda">Ingresá el código que te compartió el docente del aula.</p>
     <div class="modal-acciones">
       <button type="button" (click)="cerrarUnirse()">Cancelar</button>
-      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="unirseConCodigo()">
+      <button
+        type="button"
+        class="btn-primario"
+        [disabled]="guardando()"
+        (click)="unirseConCodigo()"
+      >
         {{ guardando() ? 'Uniéndome…' : 'Unirme' }}
       </button>
     </div>
@@ -152,8 +463,22 @@
 
 <!-- MODAL CREAR TABLERO -->
 <div class="modal-backdrop" *ngIf="mostrarCrearTablero()" (click)="cerrarCrearTablero()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>Crear tablero</h3>
+  <div
+    class="modal"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-crear-tablero"
+  >
+    <div class="modal-head">
+      <div>
+        <span class="modal-eyebrow">Nuevo tablero</span>
+        <h3 id="titulo-crear-tablero">Crear tablero</h3>
+      </div>
+      <button class="modal-close" type="button" aria-label="Cerrar" (click)="cerrarCrearTablero()">
+        ×
+      </button>
+    </div>
     <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Nombre
@@ -161,13 +486,14 @@
         [(ngModel)]="nombreTablero"
         (keydown.enter)="crearTablero()"
         placeholder="Ej: Proyecto final"
+        autocomplete="off"
       />
     </label>
     <p class="ayuda">Vas a quedar como administrador del tablero.</p>
     <div class="modal-acciones">
       <button type="button" (click)="cerrarCrearTablero()">Cancelar</button>
       <button type="button" class="btn-primario" [disabled]="guardando()" (click)="crearTablero()">
-        {{ guardando() ? 'Creando…' : 'Crear' }}
+        {{ guardando() ? 'Creando…' : 'Crear tablero' }}
       </button>
     </div>
   </div>
@@ -175,8 +501,22 @@
 
 <!-- MODAL UNIRSE A TABLERO -->
 <div class="modal-backdrop" *ngIf="mostrarUnirseTablero()" (click)="cerrarUnirseTablero()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>Unirme a un tablero</h3>
+  <div
+    class="modal"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-unirse-tablero"
+  >
+    <div class="modal-head">
+      <div>
+        <span class="modal-eyebrow">Invitación</span>
+        <h3 id="titulo-unirse-tablero">Unirme a un tablero</h3>
+      </div>
+      <button class="modal-close" type="button" aria-label="Cerrar" (click)="cerrarUnirseTablero()">
+        ×
+      </button>
+    </div>
     <p *ngIf="error()" class="error">{{ error() }}</p>
     <label>
       Código del tablero
@@ -184,12 +524,19 @@
         [(ngModel)]="codigoTablero"
         (keydown.enter)="unirseATablero()"
         placeholder="Ej: A3F9K2"
-        style="text-transform: uppercase"
+        autocomplete="off"
+        class="input-codigo"
       />
     </label>
+    <p class="ayuda">Pedile el código a la persona que creó el tablero.</p>
     <div class="modal-acciones">
       <button type="button" (click)="cerrarUnirseTablero()">Cancelar</button>
-      <button type="button" class="btn-primario" [disabled]="guardando()" (click)="unirseATablero()">
+      <button
+        type="button"
+        class="btn-primario"
+        [disabled]="guardando()"
+        (click)="unirseATablero()"
+      >
         {{ guardando() ? 'Uniéndome…' : 'Unirme' }}
       </button>
     </div>

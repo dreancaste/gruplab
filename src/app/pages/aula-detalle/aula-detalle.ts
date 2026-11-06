@@ -40,6 +40,7 @@ export class AulaDetalle implements OnInit {
   // Solicitudes de acceso por grupoId -> lista de userIds solicitantes
   solicitudesPorGrupo = signal<Record<string, string[]>>({});
   enviandoSolicitudGrupoId = signal<string | null>(null);
+  codigoCopiado = signal(false);
 
   // Modal crear/editar grupo
   mostrarModalGrupo = signal(false);
@@ -70,6 +71,19 @@ export class AulaDetalle implements OnInit {
     private auth: AuthService,
   ) {}
 
+  async copiarCodigo(event: Event) {
+    event.stopPropagation();
+    const codigo = this.materia()?.codigoInvitacion;
+    if (!codigo || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(codigo);
+      this.codigoCopiado.set(true);
+      window.setTimeout(() => this.codigoCopiado.set(false), 1800);
+    } catch {
+      /* el portapapeles puede estar bloqueado por el navegador */
+    }
+  }
+
   async ngOnInit() {
     try {
       const id = this.route.snapshot.paramMap.get('id');
@@ -78,12 +92,15 @@ export class AulaDetalle implements OnInit {
       const uid = await this.auth.getUserId();
       this.userId.set(uid);
 
-      this.auth.getEmail?.().then((email) => {
-        if (email) {
-          this.usuariosMap.update((m) => ({ ...m, [uid]: email }));
-          this.materiaService.sincronizarPerfilUsuario?.(uid, email);
-        }
-      }).catch(() => {});
+      this.auth
+        .getEmail?.()
+        .then((email) => {
+          if (email) {
+            this.usuariosMap.update((m) => ({ ...m, [uid]: email }));
+            this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+          }
+        })
+        .catch(() => {});
 
       const materia = await this.materiaService.obtenerMateria(id);
       if (!materia) throw new Error('Aula no encontrada');
@@ -114,9 +131,7 @@ export class AulaDetalle implements OnInit {
     const docentes = new Set([...this.adminsAula, ...this.profesoresAula]);
     const rawGrupos = await this.materiaService.listarGruposDeMateria(materia.id);
     const grupos = rawGrupos.map((g) => {
-      const limpios = (g.integrantes ?? []).filter(
-        (id): id is string => !!id && !docentes.has(id),
-      );
+      const limpios = (g.integrantes ?? []).filter((id): id is string => !!id && !docentes.has(id));
       if (
         this.esDocente &&
         limpios.length !== (g.integrantes ?? []).filter(Boolean).length &&
@@ -200,9 +215,7 @@ export class AulaDetalle implements OnInit {
 
   get profesoresAula(): string[] {
     const admins = new Set(this.adminsAula);
-    return (this.materia()?.profesores ?? []).filter(
-      (id): id is string => !!id && !admins.has(id),
-    );
+    return (this.materia()?.profesores ?? []).filter((id): id is string => !!id && !admins.has(id));
   }
 
   get alumnosDisponibles(): string[] {

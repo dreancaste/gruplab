@@ -28,6 +28,8 @@ export class MisAulas implements OnInit {
   mostrarUnirseTablero = signal(false);
   codigoTablero = '';
   userId = signal<string | null>(null);
+  userEmail = signal<string | null>(null);
+  codigoCopiado = signal<string | null>(null);
   cargando = signal(true);
   guardando = signal(false);
   error = signal<string | null>(null);
@@ -51,9 +53,15 @@ export class MisAulas implements OnInit {
     try {
       const uid = await this.auth.getUserId();
       this.userId.set(uid);
-      this.auth.getEmail?.().then((email) => {
-        if (email) this.materiaService.sincronizarPerfilUsuario?.(uid, email);
-      }).catch(() => {});
+      this.auth
+        .getEmail?.()
+        .then((email) => {
+          if (email) {
+            this.userEmail.set(email);
+            this.materiaService.sincronizarPerfilUsuario?.(uid, email);
+          }
+        })
+        .catch(() => {});
       const materias = await this.materiaService.listarMisMaterias(uid);
       this.misMaterias.set(materias);
       const tableros = await this.materiaService.listarMisTableros(uid);
@@ -79,6 +87,37 @@ export class MisAulas implements OnInit {
     const uid = this.userId();
     if (!uid) return [];
     return this.misMaterias().filter((m) => m.alumnos?.includes(uid));
+  }
+
+  // ==== Resumen / presentación ====
+
+  get saludo(): string {
+    const hora = new Date().getHours();
+    if (hora < 12) return 'Buenos días';
+    if (hora < 20) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+
+  get nombreCorto(): string {
+    const email = this.userEmail();
+    if (!email) return '';
+    const local = email.split('@')[0] ?? '';
+    const nombre = local.split(/[._-]/)[0] ?? local;
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  }
+
+  async copiarCodigo(codigo: string | null | undefined, event: Event) {
+    event.stopPropagation();
+    if (!codigo || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(codigo);
+      this.codigoCopiado.set(codigo);
+      window.setTimeout(() => {
+        if (this.codigoCopiado() === codigo) this.codigoCopiado.set(null);
+      }, 1800);
+    } catch {
+      /* el portapapeles puede estar bloqueado por el navegador */
+    }
   }
 
   // ==== Acciones ====
@@ -157,7 +196,7 @@ export class MisAulas implements OnInit {
     this.codigoIngresado = '';
     this.error.set(null);
   }
-    // ==== Tableros independientes ====
+  // ==== Tableros independientes ====
 
   abrirCrearTablero() {
     this.mostrarCrearTablero.set(true);
@@ -185,7 +224,7 @@ export class MisAulas implements OnInit {
     try {
       const nuevo = await this.materiaService.crearTableroIndependiente(
         this.nombreTablero.trim(),
-        uid
+        uid,
       );
       this.misTableros.update((ts) => [...ts, nuevo]);
       this.cerrarCrearTablero();
@@ -222,7 +261,7 @@ export class MisAulas implements OnInit {
     try {
       const tablero = await this.materiaService.unirseATableroConCodigo(
         this.codigoTablero.trim(),
-        uid
+        uid,
       );
       this.misTableros.update((ts) => [...ts, tablero]);
       this.cerrarUnirseTablero();
