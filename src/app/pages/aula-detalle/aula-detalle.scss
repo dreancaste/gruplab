@@ -6,20 +6,20 @@
 
 .btn-volver {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  border: 1.5px solid var(--border-dark);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 1.35rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--shadow-md);
 
   &:hover {
-    background: #f8fafc;
-    color: #0f172a;
-    border-color: #cbd5e1;
+    background: var(--surface-subtle);
+    color: var(--text-main);
+    border-color: var(--border-dark);
   }
 }
 
@@ -32,20 +32,20 @@
   margin-bottom: 2rem;
   padding: 1.5rem 1.75rem;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 16px;
-  box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-md);
 
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.85rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-main);
   }
 
   .descripcion {
     margin: 0;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.95rem;
   }
 }
@@ -65,19 +65,19 @@
   letter-spacing: 0.01em;
 
   &.rol-admin {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
+    background: var(--warning-50);
+    color: var(--warning-600);
+    border: 1.5px solid #fedf89;
   }
   &.rol-profesor {
-    background: #eef2ff;
-    color: #4338ca;
-    border: 1px solid #e0e7ff;
+    background: var(--brand-50);
+    color: var(--orange-hover);
+    border: 1.5px solid var(--brand-100);
   }
   &.rol-alumno {
-    background: #dcfce7;
+    background: var(--success-50);
     color: #166534;
-    border: 1px solid #bbf7d0;
+    border: 1.5px solid #abefc6;
   }
 }
 
@@ -93,7 +93,7 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-main);
   }
 }
 
@@ -106,9 +106,9 @@
 
 .codigo-invitacion {
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--text-muted);
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   padding: 0.38rem 0.75rem;
   border-radius: 8px;
   display: inline-flex;
@@ -116,11 +116,11 @@
   gap: 0.45rem;
 
   code {
-    background: #eef2ff;
+    background: var(--brand-50);
     padding: 0.2rem 0.55rem;
     border-radius: 6px;
     font-family: var(--font-mono);
-    color: #4338ca;
+    color: var(--orange-hover);
     font-weight: 700;
     letter-spacing: 0.08em;
   }
@@ -135,14 +135,14 @@
 .card-grupo {
   position: relative;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 14px;
   padding: 1.3rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--shadow-md);
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -155,25 +155,25 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #6366f1 0%, #3b82f6 100%);
+    height: 8px;
+    background: var(--orange);
   }
 
   &:hover {
     transform: translateY(-3px);
-    border-color: #c7d2fe;
-    box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.14);
+    border-color: var(--brand-200);
+    box-shadow: var(--shadow-md);
   }
 
   h3 {
     margin: 0.15rem 0 0.35rem;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-main);
   }
 
   .meta {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.84rem;
     margin: 0 0 0.75rem;
     font-weight: 500;
@@ -182,8 +182,8 @@
   .proximamente {
     margin-top: 0.5rem;
     padding-top: 0.65rem;
-    border-top: 1px solid #f1f5f9;
-    color: #4f46e5;
+    border-top: 1.5px solid var(--surface-sunken);
+    color: var(--orange);
     font-size: 0.85rem;
     font-weight: 700;
     display: inline-flex;
@@ -205,8 +205,8 @@
 }
 
 .btn-icono {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-subtle);
+  border: 1.5px solid var(--border-dark);
   border-radius: 6px;
   cursor: pointer;
   padding: 0.25rem 0.4rem;
@@ -216,8 +216,8 @@
 
   &:hover {
     opacity: 1;
-    background: #eef2ff;
-    border-color: #c7d2fe;
+    background: var(--brand-50);
+    border-color: var(--brand-200);
   }
 }
 
@@ -232,18 +232,18 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #334155;
+  background: var(--surface-subtle);
+  border: 1.5px solid var(--border-dark);
+  color: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
 
   .btn-quitar-chip {
-    background: #fee2e2;
+    background: var(--danger-50);
     border: none;
-    color: #b91c1c;
+    color: var(--danger-600);
     cursor: pointer;
     font-size: 0.68rem;
     font-weight: 700;
@@ -256,7 +256,7 @@
     border-radius: 999px;
 
     &:hover {
-      background: #ef4444;
+      background: var(--danger-600);
       color: #ffffff;
     }
   }
@@ -266,14 +266,14 @@
   margin-top: 2.25rem;
   padding: 1.5rem 1.75rem;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 16px;
-  box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-md);
 }
 
 .agregar-alumno-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-subtle);
+  border: 1.5px solid var(--border-dark);
   border-radius: 12px;
   padding: 1.1rem;
   margin-bottom: 1.25rem;
@@ -301,14 +301,14 @@
 
   .sugeridos-label {
     font-size: 0.78rem;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 600;
   }
 
   .btn-sugerido {
     background: #ffffff;
-    border: 1px solid #c7d2fe;
-    color: #4338ca;
+    border: 1.5px solid var(--brand-200);
+    color: var(--orange-hover);
     border-radius: 999px;
     padding: 0.22rem 0.65rem;
     font-size: 0.78rem;
@@ -316,8 +316,8 @@
     cursor: pointer;
 
     &:hover {
-      background: #eef2ff;
-      border-color: #818cf8;
+      background: var(--brand-50);
+      border-color: var(--orange);
     }
   }
 }
@@ -335,8 +335,8 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 0.85rem 1.1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-subtle);
+  border: 1.5px solid var(--border-dark);
   border-radius: 10px;
   transition:
     border-color 0.15s ease,
@@ -344,7 +344,7 @@
 
   &:hover {
     background: #ffffff;
-    border-color: #cbd5e1;
+    border-color: var(--border-dark);
   }
 }
 
@@ -356,7 +356,7 @@
 
   .alumno-nombre-email {
     font-size: 0.92rem;
-    color: #0f172a;
+    color: var(--text-main);
   }
 }
 
@@ -365,14 +365,14 @@
   font-weight: 700;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #4338ca;
-  border: 1px solid #e0e7ff;
+  background: var(--brand-50);
+  color: var(--orange-hover);
+  border: 1.5px solid var(--brand-100);
 
   &.sin-grupo-badge {
-    background: #f1f5f9;
-    color: #64748b;
-    border-color: #e2e8f0;
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    border-color: var(--border-dark);
   }
 }
 
@@ -391,10 +391,10 @@
   select {
     padding: 0.3rem 0.6rem;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
+    border: 1.5px solid var(--border-dark);
     font-size: 0.8rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-secondary);
     background: #ffffff;
   }
 }
@@ -402,19 +402,19 @@
 .subseccion-profesores {
   margin-top: 1.5rem;
   padding-top: 1.15rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1.5px solid var(--surface-sunken);
 
   h3 {
     margin: 0 0 0.65rem;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #334155;
+    color: var(--text-secondary);
   }
 }
 
 .sin-grupo {
   background: #ffffff;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--border-dark);
   border-radius: 16px;
   padding: 2.25rem;
   text-align: center;
@@ -424,20 +424,20 @@
     margin-top: 0;
   }
   p {
-    color: #64748b;
+    color: var(--text-muted);
   }
 }
 
 .card-mi-grupo {
-  background: linear-gradient(135deg, #eef2ff 0%, #eff6ff 100%);
-  border: 1px solid #c7d2fe;
+  background: var(--brand-50);
+  border: 1.5px solid var(--brand-200);
   border-radius: 14px;
   padding: 1.35rem 1.5rem;
   margin-bottom: 2rem;
 
   .meta {
     margin: 0.3rem 0 0;
-    color: #475569;
+    color: var(--text-muted);
   }
 }
 
@@ -454,23 +454,23 @@
 
 .btn-solicitar {
   background: #ffffff;
-  color: #4f46e5;
-  border: 1px solid #a5b4fc;
+  color: var(--orange);
+  border: 1.5px solid var(--brand-200);
   padding: 0.45rem 0.85rem;
   border-radius: 8px;
   font-size: 0.84rem;
   font-weight: 700;
 
   &:hover:not(:disabled) {
-    background: #eef2ff;
+    background: var(--brand-50);
   }
 }
 
 .badge-pendiente {
   display: inline-block;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: var(--warning-50);
+  color: var(--warning-600);
+  border: 1.5px solid #fedf89;
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0.35rem 0.65rem;
@@ -481,8 +481,8 @@
 .solicitudes-box {
   margin: 0.75rem 0;
   padding: 0.75rem;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--warning-50);
+  border: 1.5px solid #fedf89;
   border-radius: 10px;
   cursor: default;
 
@@ -490,7 +490,7 @@
     margin: 0 0 0.5rem;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #92400e;
+    color: var(--warning-600);
   }
 }
 
@@ -500,7 +500,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.35rem 0;
-  border-top: 1px dashed #fde68a;
+  border-top: 1px dashed #fedf89;
 
   &:first-of-type {
     border-top: none;
@@ -509,7 +509,7 @@
   .solicitante-id {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -522,103 +522,103 @@
   gap: 0.35rem;
 
   .btn-aceptar {
-    background: #16a34a;
+    background: var(--success-600);
     color: #ffffff;
     border: none;
     padding: 0.25rem 0.55rem;
     font-size: 0.75rem;
 
     &:hover {
-      background: #15803d;
+      background: var(--success-600);
     }
   }
 
   .btn-rechazar {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background: var(--danger-50);
+    color: var(--danger-600);
+    border: 1.5px solid #fecdca;
     padding: 0.25rem 0.55rem;
     font-size: 0.75rem;
 
     &:hover {
-      background: #fecaca;
+      background: #fecdca;
     }
   }
 }
 
 button.btn-primario {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hover) 100%);
   color: #ffffff;
   border: none;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.28);
+  box-shadow: var(--shadow-md);
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+    background: linear-gradient(135deg, var(--orange-hover) 0%, var(--brand-700) 100%);
     color: #ffffff;
   }
 }
 
 button.btn-secundario {
   background: #ffffff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
+  color: var(--orange);
+  border: 1.5px solid var(--brand-200);
 
   &:hover:not(:disabled) {
-    background: #eef2ff;
-    color: #3730a3;
+    background: var(--brand-50);
+    color: var(--brand-700);
   }
 }
 
 .btn-peligro {
-  background: #ef4444;
+  background: var(--danger-600);
   color: #ffffff;
   border: none;
 
   &:hover:not(:disabled) {
-    background: #dc2626;
+    background: var(--danger-600);
     color: #ffffff;
   }
 }
 
 .btn-mini {
   background: #ffffff;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border-dark);
   border-radius: 8px;
   padding: 0.3rem 0.65rem;
   font-size: 0.78rem;
   font-weight: 600;
 
   &.btn-promover {
-    background: #eef2ff;
-    color: #4338ca;
-    border-color: #c7d2fe;
+    background: var(--brand-50);
+    color: var(--orange-hover);
+    border-color: var(--brand-200);
 
     &:hover {
-      background: #e0e7ff;
+      background: var(--brand-100);
     }
   }
 
   &.btn-quitar-aula {
-    background: #fef2f2;
-    color: #b91c1c;
-    border-color: #fecaca;
+    background: var(--danger-50);
+    color: var(--danger-600);
+    border-color: #fecdca;
 
     &:hover {
-      background: #fee2e2;
+      background: var(--danger-50);
     }
   }
 }
 
 .vacio {
-  color: #64748b;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--danger-50);
+  border: 1.5px solid #fecdca;
+  color: var(--danger-600);
   padding: 0.85rem 1.1rem;
   border-radius: 10px;
   margin-bottom: 1.25rem;
@@ -640,7 +640,7 @@ button.btn-secundario {
 
 .modal {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 16px;
   padding: 1.5rem;
   width: 100%;
@@ -667,13 +667,13 @@ button.btn-secundario {
     gap: 0.4rem;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-secondary);
   }
 
   .ayuda {
     margin: 0;
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--text-muted);
   }
 }
 
@@ -687,17 +687,17 @@ button.btn-secundario {
   gap: 0.45rem;
   max-height: 230px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 10px;
   padding: 0.85rem;
-  background: #f8fafc;
+  background: var(--surface-subtle);
 
   h4 {
     margin: 0 0 0.35rem;
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #64748b;
+    color: var(--text-muted);
   }
 }
 
@@ -708,13 +708,13 @@ button.btn-secundario {
   gap: 0.5rem;
   padding: 0.45rem 0.65rem;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid var(--border-dark);
   border-radius: 8px;
 
   .alumno-id {
     font-size: 0.85rem;
     font-weight: 500;
-    color: #0f172a;
+    color: var(--text-main);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -736,7 +736,7 @@ button.btn-secundario {
     margin: 0;
     font-size: 0.88rem;
     font-weight: 700;
-    color: #334155;
+    color: var(--text-secondary);
   }
 
   .lista-alumnos {
@@ -745,10 +745,10 @@ button.btn-secundario {
     gap: 0.3rem;
     max-height: 200px;
     overflow-y: auto;
-    border: 1px solid #e2e8f0;
+    border: 1.5px solid var(--border-dark);
     border-radius: 10px;
     padding: 0.6rem;
-    background: #f8fafc;
+    background: var(--surface-subtle);
   }
 
   .alumno-item {
@@ -769,16 +769,16 @@ button.btn-secundario {
     }
 
     &:hover {
-      background: #eef2ff;
+      background: var(--brand-50);
     }
 
     &.seleccionado {
-      background: #e0e7ff;
+      background: var(--brand-100);
     }
 
     .alumno-id {
       font-size: 0.85rem;
-      color: #1e293b;
+      color: var(--text-main);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -793,7 +793,7 @@ button.btn-secundario {
   justify-content: flex-end;
   gap: 0.6rem;
   padding-top: 0.85rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1.5px solid var(--surface-sunken);
 }
 
 /* ==========================================================================
@@ -820,7 +820,7 @@ button.btn-secundario {
   align-items: center;
   gap: 0.3rem;
   background: transparent;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   box-shadow: none;
   color: var(--text-muted);
   padding: 0.35rem 0.55rem;
@@ -887,7 +887,7 @@ button.btn-secundario {
   align-items: flex-start;
   gap: 0.55rem;
   background: var(--danger-50);
-  border: 1px solid #fecdca;
+  border: 1.5px solid #fecdca;
   color: #912018;
   padding: 0.8rem 1rem;
   border-radius: 12px;
@@ -912,8 +912,8 @@ button.btn-secundario {
   padding: 1.6rem 1.75rem;
   background:
     radial-gradient(520px 200px at 100% 0%, rgba(59, 110, 246, 0.12), transparent 70%),
-    linear-gradient(135deg, #f4f8ff 0%, #ffffff 62%);
-  border: 1px solid var(--brand-100);
+    linear-gradient(135deg, var(--bg-cream) 0%, #ffffff 62%);
+  border: 1.5px solid var(--brand-100);
   border-radius: 20px;
   box-shadow: var(--shadow-sm);
 
@@ -967,7 +967,7 @@ button.btn-secundario {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
 
   &.rol-admin {
     background: var(--warning-50);
@@ -1001,7 +1001,7 @@ button.btn-secundario {
   padding: 0.3rem 0.65rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 0.78rem;
   font-weight: 600;
@@ -1029,7 +1029,7 @@ button.btn-secundario {
     letter-spacing: 0.08em;
     color: var(--brand-700);
     background: var(--brand-50);
-    border: 1px solid var(--brand-100);
+    border: 1.5px solid var(--brand-100);
     border-radius: 6px;
     padding: 0.1rem 0.45rem;
   }
@@ -1037,7 +1037,7 @@ button.btn-secundario {
 
 .btn-copiar {
   background: transparent;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   box-shadow: none;
   color: var(--brand-600);
   font-size: 0.73rem;
@@ -1062,7 +1062,7 @@ button.btn-secundario {
 
 .btn-ghost-danger {
   background: rgba(255, 255, 255, 0.7);
-  border: 1px solid #fecdca;
+  border: 1.5px solid #fecdca;
   color: var(--danger-600);
   box-shadow: none;
   font-size: 0.8rem;
@@ -1090,7 +1090,7 @@ button.btn-secundario {
   gap: 0.85rem;
   margin-bottom: 1.1rem;
   padding-bottom: 0.95rem;
-  border-bottom: 1px solid var(--surface-sunken);
+  border-bottom: 1.5px solid var(--surface-sunken);
 
   h2 {
     margin: 0;
@@ -1141,7 +1141,7 @@ button.btn-secundario {
   padding: 0 0.45rem;
   border-radius: 999px;
   background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 0.72rem;
   font-weight: 700;
@@ -1164,8 +1164,8 @@ button.btn-secundario {
     border-color 0.18s ease;
 
   &::before {
-    height: 3px;
-    background: linear-gradient(90deg, var(--brand-500), #22b8cf);
+    height: 8px;
+    background: var(--orange);
   }
 
   &:hover,
@@ -1210,7 +1210,7 @@ button.btn-secundario {
   display: grid;
   place-items: center;
   background: var(--brand-50);
-  border: 1px solid var(--brand-100);
+  border: 1.5px solid var(--brand-100);
   color: var(--brand-700);
   font-family: var(--font-display);
   font-size: 0.9rem;
@@ -1230,7 +1230,7 @@ button.btn-secundario {
   display: grid;
   place-items: center;
   background: transparent;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   border-radius: 8px;
   opacity: 0.7;
   box-shadow: none;
@@ -1262,7 +1262,7 @@ button.btn-secundario {
 
 .chip-miembro {
   background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 0.74rem;
   padding: 0.2rem 0.55rem;
@@ -1286,7 +1286,7 @@ button.btn-secundario {
 .proximamente {
   margin-top: auto;
   padding-top: 0.7rem;
-  border-top: 1px solid var(--surface-sunken);
+  border-top: 1.5px solid var(--surface-sunken);
   color: var(--brand-600);
   font-size: 0.8rem;
   font-weight: 700;
@@ -1311,7 +1311,7 @@ button.btn-secundario {
     height: 42px;
     border-radius: 12px;
     background: var(--surface-card);
-    border: 1px solid var(--border-subtle);
+    border: 1.5px solid var(--border-subtle);
     color: var(--brand-500);
     display: grid;
     place-items: center;
@@ -1402,7 +1402,7 @@ button.btn-secundario {
     height: 52px;
     border-radius: 14px;
     background: var(--brand-50);
-    border: 1px solid var(--brand-100);
+    border: 1.5px solid var(--brand-100);
     color: var(--brand-600);
     display: grid;
     place-items: center;
@@ -1430,8 +1430,8 @@ button.btn-secundario {
 .card-mi-grupo {
   background:
     radial-gradient(420px 160px at 100% 0%, rgba(59, 110, 246, 0.1), transparent 70%),
-    linear-gradient(135deg, #f4f8ff 0%, #ffffff 70%);
-  border: 1px solid var(--brand-100);
+    linear-gradient(135deg, var(--bg-cream) 0%, #ffffff 70%);
+  border: 1.5px solid var(--brand-100);
   border-radius: 18px;
   padding: 1.4rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -1484,7 +1484,7 @@ button.btn-secundario {
 .btn-solicitar {
   background: var(--surface-card);
   color: var(--brand-700);
-  border: 1px solid var(--brand-200);
+  border: 1.5px solid var(--brand-200);
   padding: 0.45rem 0.8rem;
   border-radius: 9px;
   font-size: 0.8rem;
@@ -1501,7 +1501,7 @@ button.btn-secundario {
   align-items: center;
   background: var(--warning-50);
   color: var(--warning-600);
-  border: 1px solid #fedf89;
+  border: 1.5px solid #fedf89;
   font-size: 0.76rem;
   font-weight: 700;
   padding: 0.35rem 0.6rem;
@@ -1510,28 +1510,28 @@ button.btn-secundario {
 
 /* Botones -------------------------------------------------------------------- */
 button.btn-primario {
-  background: linear-gradient(180deg, var(--brand-500) 0%, var(--brand-600) 100%);
+  background: var(--orange);
   color: #ffffff;
-  border: 1px solid var(--brand-600);
+  border: 1.5px solid var(--brand-600);
   box-shadow: var(--shadow-brand);
 
   &:hover:not(:disabled) {
-    background: linear-gradient(180deg, var(--brand-600) 0%, var(--brand-700) 100%);
+    background: var(--orange-hover);
     border-color: var(--brand-700);
     color: #ffffff;
-    box-shadow: 0 10px 24px -8px rgba(37, 87, 224, 0.45);
+    box-shadow: var(--shadow-md);
   }
 }
 
 button.btn-secundario {
   background: var(--surface-card);
   color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
+  border: 1.5px solid var(--border-strong);
   box-shadow: var(--shadow-xs);
 
   &:hover:not(:disabled) {
     background: var(--surface-subtle);
-    border-color: #bac7d8;
+    border-color: var(--border-dark);
     color: var(--text-primary);
   }
 }
@@ -1544,8 +1544,8 @@ button.btn-secundario {
 .btn-peligro {
   background: var(--danger-600);
   color: #ffffff;
-  border: 1px solid var(--danger-600);
-  box-shadow: 0 1px 2px rgba(217, 45, 32, 0.25);
+  border: 1.5px solid var(--danger-600);
+  box-shadow: var(--shadow-md);
 
   &:hover:not(:disabled) {
     background: #b42318;

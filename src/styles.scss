@@ -2,40 +2,53 @@
 @use '@aws-amplify/ui/dist/styles.css';
 
 /* ==========================================================================
-   GrupLab — Design system
-   Inspirado en plataformas académicas (Google Classroom, Canvas, Notion):
-   superficies claras, jerarquía tipográfica marcada y acentos medidos.
+   GrupLab — Tema neo-brutalista académico
+   Basado en la propuesta visual compartida: crema, naranja, azul y bordes
+   oscuros con sombras duras y botones píldora.
    ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Superficies */
-  --bg-app: #f5f7fb;
-  --surface-card: #ffffff;
-  --surface-subtle: #f8fafc;
-  --surface-sunken: #f1f5f9;
-  --border-subtle: #e7ecf3;
-  --border-strong: #d5deea;
+  /* Paleta del tema */
+  --bg-cream: #faf9f5;
+  --bg-white: #ffffff;
+  --bg-pill: #eeede8;
+  --text-main: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --orange: #ff5a1f;
+  --orange-hover: #e64d15;
+  --blue: #2563eb;
+  --blue-hover: #1d4ed8;
+  --border-dark: #1a1a1a;
 
-  /* Texto */
-  --text-primary: #101828;
-  --text-secondary: #475467;
-  --text-muted: #667085;
+  /* Aliases usados por los componentes */
+  --bg-app: var(--bg-cream);
+  --surface-card: var(--bg-white);
+  --surface-subtle: var(--bg-pill);
+  --surface-sunken: #e8e6df;
+  --border-subtle: var(--border-dark);
+  --border-strong: var(--border-dark);
 
-  /* Marca */
-  --brand-50: #eef4ff;
-  --brand-100: #dbe7ff;
-  --brand-200: #c3d6ff;
-  --brand-500: #3b6ef6;
-  --brand-600: #2557e0;
-  --brand-700: #1d46b8;
+  --text-primary: var(--text-main);
+  --text-secondary: #3a3a3a;
+  --text-muted: var(--text-muted);
 
-  /* Semánticos */
+  --brand-50: #fff1ec;
+  --brand-100: #ffd9cc;
+  --brand-200: #ffb399;
+  --brand-500: var(--orange);
+  --brand-600: var(--orange-hover);
+  --brand-700: #c73e0f;
+
+  --accent-blue: var(--blue);
+  --accent-blue-hover: var(--blue-hover);
+
   --success-50: #ecfdf3;
   --success-600: #079455;
   --warning-50: #fffaeb;
@@ -48,28 +61,28 @@
   /* Radios */
   --radius-xs: 8px;
   --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
   --radius-xl: 24px;
   --radius-pill: 999px;
 
-  /* Sombras */
-  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
-  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
-  --shadow-md: 0 6px 16px -4px rgba(16, 24, 40, 0.09), 0 2px 6px -2px rgba(16, 24, 40, 0.04);
-  --shadow-lg: 0 24px 48px -16px rgba(16, 24, 40, 0.22);
-  --shadow-brand: 0 8px 20px -6px rgba(37, 87, 224, 0.35);
+  /* Sombras duras (neo-brutalistas) */
+  --shadow-xs: 1px 1px 0 var(--border-dark);
+  --shadow-sm: 2px 3px 0 var(--border-dark);
+  --shadow-md: 3px 4px 0 var(--border-dark);
+  --shadow-lg: 4px 6px 0 var(--border-dark);
+  --shadow-brand: 2px 3px 0 var(--border-dark);
 
   /* Amplify UI Theme Overrides */
-  --amplify-colors-brand-primary-10: #eef4ff;
-  --amplify-colors-brand-primary-80: #2557e0;
-  --amplify-colors-brand-primary-90: #1d46b8;
-  --amplify-colors-brand-primary-100: #173a99;
-  --amplify-components-button-primary-background-color: #2557e0;
-  --amplify-components-button-primary-hover-background-color: #1d46b8;
+  --amplify-colors-brand-primary-10: #fff1ec;
+  --amplify-colors-brand-primary-80: var(--orange);
+  --amplify-colors-brand-primary-90: var(--orange-hover);
+  --amplify-colors-brand-primary-100: #c73e0f;
+  --amplify-components-button-primary-background-color: var(--orange);
+  --amplify-components-button-primary-hover-background-color: var(--orange-hover);
   --amplify-radii-small: 8px;
   --amplify-radii-medium: 10px;
-  --amplify-radii-large: 14px;
+  --amplify-radii-large: 16px;
 }
 
 *,
@@ -83,12 +96,8 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: var(--bg-app);
-  background-image:
-    radial-gradient(900px 480px at 8% -10%, rgba(59, 110, 246, 0.09), transparent 70%),
-    radial-gradient(760px 420px at 100% 0%, rgba(6, 182, 212, 0.06), transparent 70%);
-  background-attachment: fixed;
-  color: var(--text-primary);
+  background-color: var(--bg-cream);
+  color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
@@ -97,76 +106,104 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+}
+
 h1,
 h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  color: var(--text-main);
   line-height: 1.25;
 }
 
 p {
   margin-top: 0;
+  color: var(--text-muted);
 }
 
 a {
-  color: var(--brand-600);
+  color: var(--blue);
 }
 
 ::selection {
-  background: rgba(59, 110, 246, 0.2);
+  background: var(--brand-100);
 }
 
-/* Foco accesible y consistente */
+/* Foco accesible */
 :focus-visible {
-  outline: 2px solid var(--brand-500);
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
 
 /* --------------------------------------------------------------------------
-   Botones base
+   Botones base — píldora neo-brutalista
    -------------------------------------------------------------------------- */
 button {
   font-family: var(--font-sans);
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-card);
-  color: var(--text-secondary);
-  padding: 0.52rem 0.95rem;
-  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-dark);
+  background: var(--orange);
+  color: #ffffff;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.9rem;
   line-height: 1.2;
   cursor: pointer;
   transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease,
-    transform 0.12s ease;
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    background-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.42rem;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
   white-space: nowrap;
+  margin: 0;
 
   &:hover:not(:disabled) {
-    background: var(--surface-subtle);
-    border-color: var(--border-strong);
-    color: var(--text-primary);
+    background: var(--orange-hover);
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-md);
   }
 
   &:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--border-dark);
   }
 
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
     box-shadow: none;
+    transform: none;
+  }
+}
+
+/* Variantes */
+.btn-blue,
+button.btn-blue {
+  background: var(--blue);
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background: var(--blue-hover);
+  }
+}
+
+.btn-outline,
+button.btn-outline {
+  background: var(--bg-white);
+  color: var(--text-main);
+
+  &:hover:not(:disabled) {
+    background: var(--bg-pill);
   }
 }
 
@@ -177,12 +214,12 @@ input:not([type='checkbox']):not([type='radio']),
 textarea,
 select {
   font-family: var(--font-sans);
-  color: var(--text-primary);
-  background: var(--surface-card);
-  border: 1px solid var(--border-strong);
+  color: var(--text-main);
+  background: var(--bg-white);
+  border: 1.5px solid var(--border-dark);
   border-radius: var(--radius-sm);
-  padding: 0.62rem 0.8rem;
-  font-size: 0.925rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -192,17 +229,13 @@ select {
     background-color 0.15s ease;
 
   &::placeholder {
-    color: #98a2b3;
-  }
-
-  &:hover:not(:focus) {
-    border-color: #bac7d8;
+    color: #9a9a9a;
   }
 
   &:focus {
     outline: none;
-    border-color: var(--brand-500);
-    box-shadow: 0 0 0 4px rgba(59, 110, 246, 0.14);
+    border-color: var(--blue);
+    box-shadow: 2px 3px 0 var(--blue);
   }
 }
 
@@ -214,7 +247,7 @@ input[type='radio'] {
   margin: 0;
   flex-shrink: 0;
   cursor: pointer;
-  accent-color: var(--brand-600);
+  accent-color: var(--orange);
 }
 
 /* --------------------------------------------------------------------------
@@ -228,11 +261,11 @@ input[type='radio'] {
   padding: 1.5rem;
 
   [data-amplify-router] {
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
+    border: 1.5px solid var(--border-dark);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
-    background: var(--surface-card);
+    background: var(--bg-white);
   }
 }
 
@@ -249,13 +282,13 @@ input[type='radio'] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c9d3e1;
+  background: #c9c6be;
   border: 2px solid transparent;
   background-clip: padding-box;
   border-radius: var(--radius-pill);
 
   &:hover {
-    background: #a9b7c9;
+    background: #a9a69e;
     background-clip: padding-box;
   }
 }
@@ -297,6 +330,18 @@ input[type='radio'] {
   }
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -306,4 +351,11 @@ input[type='radio'] {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+[class*='card']::before,
+[class*='cabecera']::before,
+section::before,
+header::before {
+  border-bottom: 1.5px solid var(--border-dark);
 }

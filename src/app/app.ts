@@ -12,65 +12,32 @@ import { AuthService } from './services/auth';
   template: `
     <amplify-authenticator>
       <ng-template amplifySlot="authenticated" let-signOut="signOut">
-        <header class="topbar">
-          <div class="topbar-inner">
-            <button class="brand" type="button" (click)="irInicio()" title="Ir a Mis aulas">
-              <span class="brand-logo" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 19.5V6a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v14" stroke-linecap="round" />
-                  <path d="M6 17h12" stroke-linecap="round" />
-                  <path d="M8 7h6" stroke-linecap="round" />
-                </svg>
-              </span>
-              <span class="brand-text">
-                <span class="brand-name">GrupLab</span>
-                <span class="brand-tag">Espacio colaborativo</span>
-              </span>
+        <header class="navbar">
+          <div class="navbar-left">
+            <button class="logo" type="button" (click)="irInicio()" title="Ir a Mis aulas">
+              <span class="logo-icon" aria-hidden="true">GL</span>
+              <span class="logo-text">Grup<span class="logo-accent">Lab</span></span>
             </button>
+            <span class="nav-pill">Espacio colaborativo</span>
+          </div>
 
-            <nav class="topnav" aria-label="Navegación principal">
-              <button class="nav-item active" type="button" (click)="irInicio()">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  aria-hidden="true"
-                >
-                  <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23V5.5Z" />
-                  <path d="M8 7h7M8 11h5" stroke-linecap="round" />
-                </svg>
-                Mis aulas
-              </button>
-            </nav>
-
-            <div class="topbar-actions">
-              <span class="user-chip" *ngIf="userEmail()" [title]="userEmail()!">
-                <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
-                <span class="user-email">{{ userShort }}</span>
-              </span>
-              <button class="btn-logout" type="button" (click)="cerrarSesion(signOut)">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M15 17l5-5-5-5M20 12H9M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-                <span>Cerrar sesión</span>
-              </button>
-            </div>
+          <div class="navbar-right">
+            <button class="nav-button" type="button" (click)="irInicio()">Mis aulas</button>
+            <span class="user-chip" *ngIf="userEmail()" [title]="userEmail()!">
+              <span class="user-name">{{ userShort }}</span>
+              <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
+            </span>
+            <button class="btn-outline btn-logout" type="button" (click)="cerrarSesion(signOut)">
+              Salir
+            </button>
           </div>
         </header>
         <main class="app-main">
           <router-outlet></router-outlet>
         </main>
+        <footer class="app-footer">
+          <p>GrupLab · Gestión de trabajos grupales</p>
+        </footer>
       </ng-template>
     </amplify-authenticator>
   `,
@@ -81,228 +48,198 @@ import { AuthService } from './services/auth';
         min-height: 100vh;
       }
 
-      .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background: rgba(255, 255, 255, 0.86);
-        backdrop-filter: saturate(180%) blur(14px);
-        border-bottom: 1px solid var(--border-subtle);
-      }
-
-      .topbar-inner {
-        max-width: 1320px;
-        margin: 0 auto;
-        min-height: 68px;
-        padding: 0.55rem 1.75rem;
+      .navbar {
+        width: 100%;
+        background-color: var(--bg-cream);
+        border-bottom: 1.5px solid var(--border-dark);
+        padding: 0.9rem 2.5rem;
         display: flex;
         align-items: center;
-        gap: 1.25rem;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
       }
 
-      .brand {
+      .navbar-left,
+      .navbar-right {
         display: flex;
         align-items: center;
-        gap: 0.7rem;
-        cursor: pointer;
-        user-select: none;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        text-decoration: none;
         background: transparent;
         border: 0;
         box-shadow: none;
-        padding: 0.25rem 0.35rem 0.25rem 0.25rem;
-        border-radius: 12px;
-        color: var(--text-primary);
-        text-align: left;
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        color: var(--text-main);
 
         &:hover:not(:disabled) {
-          background: var(--surface-subtle);
+          background: transparent;
           border: 0;
-          color: var(--text-primary);
           box-shadow: none;
+          transform: none;
         }
       }
 
-      .brand-logo {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #3b6ef6 0%, #1d46b8 100%);
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: var(--shadow-brand);
-        flex-shrink: 0;
-
-        svg {
-          width: 21px;
-          height: 21px;
-        }
-      }
-
-      .brand-text {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.15;
-      }
-
-      .brand-name {
-        font-family: var(--font-display);
-        font-size: 1.1rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        color: var(--text-primary);
-      }
-
-      .brand-tag {
-        font-size: 0.68rem;
-        color: var(--text-muted);
-        font-weight: 500;
-        letter-spacing: 0.01em;
-      }
-
-      .topnav {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        margin-left: 0.5rem;
-      }
-
-      .nav-item {
+      .logo-icon {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        padding: 0.48rem 0.85rem;
-        border-radius: 10px;
-        border: 1px solid transparent;
-        background: transparent;
-        box-shadow: none;
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        font-weight: 600;
-
-        svg {
-          width: 18px;
-          height: 18px;
-        }
-
-        &:hover:not(:disabled) {
-          background: var(--surface-subtle);
-          border-color: transparent;
-          color: var(--text-primary);
-          box-shadow: none;
-        }
-
-        &.active {
-          background: var(--brand-50);
-          border-color: var(--brand-100);
-          color: var(--brand-700);
-        }
+        justify-content: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        background-color: var(--orange);
+        color: #ffffff;
+        font-size: 1.15rem;
+        font-weight: 800;
+        border: 1.5px solid var(--border-dark);
+        border-radius: 9px;
+        box-shadow: 2px 2px 0 var(--border-dark);
       }
 
-      .topbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        margin-left: auto;
+      .logo-text {
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: var(--text-main);
+      }
+
+      .logo-accent {
+        color: var(--blue);
+      }
+
+      .nav-pill {
+        background-color: var(--bg-pill);
+        color: var(--text-main);
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        border: 1.5px solid var(--border-dark);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .nav-button {
+        background: var(--bg-white);
+        color: var(--text-main);
+        border: 1.5px solid var(--border-dark);
+        box-shadow: var(--shadow-xs);
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        border-radius: 999px;
+
+        &:hover:not(:disabled) {
+          background: var(--bg-pill);
+          transform: translate(-1px, -1px);
+          box-shadow: var(--shadow-sm);
+        }
       }
 
       .user-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+        padding: 0.25rem 0.35rem 0.25rem 0.75rem;
+        background: var(--bg-white);
+        border: 1.5px solid var(--border-dark);
         border-radius: 999px;
-        background: var(--surface-subtle);
-        border: 1px solid var(--border-subtle);
-        font-size: 0.8rem;
-        color: var(--text-secondary);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .user-name {
+        font-size: 0.85rem;
         font-weight: 600;
-        max-width: 220px;
-      }
-
-      .avatar {
-        width: 28px;
-        height: 28px;
-        border-radius: 999px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, #101828 0%, #344054 100%);
-        color: #ffffff;
-        font-size: 0.75rem;
-        font-weight: 700;
-        flex-shrink: 0;
-      }
-
-      .user-email {
+        color: var(--text-main);
+        max-width: 180px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .btn-logout {
-        background: transparent;
-        border: 1px solid transparent;
-        color: var(--text-secondary);
-        padding: 0.46rem 0.8rem;
-        border-radius: 10px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        box-shadow: none;
+      .user-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.2rem;
+        height: 2.2rem;
+        background-color: var(--blue);
+        color: #ffffff;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 1.5px solid var(--border-dark);
+        border-radius: 50%;
+        box-shadow: 1px 1px 0 var(--border-dark);
+      }
 
-        svg {
-          width: 17px;
-          height: 17px;
-        }
+      .btn-logout {
+        background: var(--bg-white);
+        color: var(--text-main);
+        border: 1.5px solid var(--border-dark);
+        box-shadow: var(--shadow-xs);
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        border-radius: 999px;
 
         &:hover:not(:disabled) {
           background: var(--danger-50);
-          border-color: #fecdca;
           color: var(--danger-600);
-          box-shadow: none;
+          transform: translate(-1px, -1px);
+          box-shadow: var(--shadow-sm);
         }
       }
 
       .app-main {
-        min-height: calc(100vh - 68px);
+        width: 100%;
+        max-width: 1080px;
+        margin: 2rem auto 2.5rem;
+        padding: 0 2rem;
+        flex: 1;
+      }
+
+      .app-footer {
+        width: 100%;
+        border-top: 1.5px solid var(--border-dark);
+        padding: 1rem 2.5rem;
+        text-align: center;
+        background-color: var(--bg-cream);
+        margin-top: auto;
+      }
+
+      .app-footer p {
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
       }
 
       @media (max-width: 760px) {
-        .topbar-inner {
-          padding: 0.5rem 1rem;
-          gap: 0.75rem;
+        .navbar {
+          padding: 0.75rem 1rem;
         }
 
-        .brand-tag {
-          display: none;
-        }
-
-        .user-email {
+        .user-name {
           display: none;
         }
 
         .user-chip {
-          padding: 0.25rem;
+          padding: 0.2rem;
           background: transparent;
           border-color: transparent;
+          box-shadow: none;
         }
 
-        .btn-logout span {
-          display: none;
-        }
-
-        .btn-logout {
-          padding: 0.46rem 0.55rem;
-        }
-      }
-
-      @media (max-width: 520px) {
-        .nav-item span {
-          display: none;
-        }
-
-        .nav-item {
-          padding: 0.48rem 0.6rem;
+        .app-main {
+          padding: 0 1rem;
+          margin: 1.25rem auto 2rem;
         }
       }
     `,

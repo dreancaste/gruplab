@@ -1,6 +1,6 @@
 .dashboard-docente {
   background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   border-radius: 18px;
   padding: 1.5rem 1.6rem;
   margin-bottom: 1.5rem;
@@ -15,7 +15,7 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   padding-bottom: 1.1rem;
-  border-bottom: 1px solid var(--surface-sunken);
+  border-bottom: 1.5px solid var(--surface-sunken);
 
   h2 {
     margin: 0.15rem 0 0.25rem;
@@ -46,7 +46,7 @@
   padding: 0.28rem 0.65rem;
   border-radius: 999px;
   background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -73,7 +73,7 @@
 
 .kpi-card {
   background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   border-radius: 14px;
   padding: 0.95rem 1rem;
   display: flex;
@@ -90,7 +90,7 @@
   }
 
   &.kpi-alerta {
-    background: linear-gradient(180deg, #fffbfa 0%, #fff1f0 100%);
+    background: var(--danger-50);
     border-color: #fecdca;
 
     .kpi-value {
@@ -170,7 +170,7 @@
 
 .kpi-icon-cyan {
   background: var(--info-50);
-  color: #0e7090;
+  color: var(--info-600);
 }
 
 .kpi-icon-amber {
@@ -200,7 +200,7 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--brand-500) 0%, #22b8cf 100%);
+    background: var(--orange);
     transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
@@ -209,7 +209,7 @@
    Comparativa por grupo
    -------------------------------------------------------------------------- */
 .comparativa-grupos {
-  border-top: 1px solid var(--surface-sunken);
+  border-top: 1.5px solid var(--surface-sunken);
   padding-top: 1.25rem;
 }
 
@@ -242,7 +242,7 @@
   padding: 0.85rem 0.95rem;
   margin-bottom: 0.6rem;
   background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   border-radius: 13px;
   transition:
     border-color 0.16s ease,
@@ -263,7 +263,7 @@
   height: 36px;
   border-radius: 10px;
   background: var(--brand-50);
-  border: 1px solid var(--brand-100);
+  border: 1.5px solid var(--brand-100);
   color: var(--brand-700);
   font-family: var(--font-display);
   font-size: 0.9rem;
@@ -309,7 +309,7 @@
   .badge-vencida {
     background: var(--danger-50);
     color: #912018;
-    border: 1px solid #fecdca;
+    border: 1.5px solid #fecdca;
     font-size: 0.68rem;
     font-weight: 700;
     padding: 0.1rem 0.45rem;
@@ -326,7 +326,7 @@
   .nota-pill {
     background: var(--warning-50);
     color: var(--warning-600);
-    border: 1px solid #fedf89;
+    border: 1.5px solid #fedf89;
     padding: 0.12rem 0.5rem;
     border-radius: 999px;
     font-weight: 700;
@@ -337,7 +337,7 @@
     font-weight: 700;
     color: var(--brand-700);
     background: var(--brand-50);
-    border: 1px solid var(--brand-100);
+    border: 1.5px solid var(--brand-100);
     padding: 0.12rem 0.5rem;
     border-radius: 999px;
     white-space: nowrap;
@@ -355,7 +355,7 @@
 
 .barra-progreso-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand-500) 0%, #22b8cf 55%, var(--success-600) 100%);
+  background: var(--orange);
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -388,13 +388,13 @@
 }
 
 .dot-backlog {
-  background: #98a2b3;
+  background: var(--text-muted);
 }
 .dot-progreso {
   background: var(--brand-500);
 }
 .dot-revision {
-  background: #f79009;
+  background: var(--warning-600);
 }
 .dot-hecho {
   background: var(--success-600);
